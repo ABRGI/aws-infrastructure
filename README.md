@@ -6,6 +6,11 @@ Project structure
 - lib folder contains the individual stacks or constructs
 - stacks are designed to be self contained with minimal dependency on external resources. If there is any dependency, the pass it as a parameter in the props of the stack or construct through the app
 
+## Execution
+- Set the ENV variable to the environment that is being deployed
+- Create a config file with the ENV value to override the default values
+- Deploy individual apps by running `cdk deploy {appfile}.ts`
+
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## Useful commands

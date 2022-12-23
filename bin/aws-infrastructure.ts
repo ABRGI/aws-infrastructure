@@ -1,21 +1,19 @@
 #!/usr/bin/env node
+import * as config from 'config';
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { AwsInfrastructureStack } from '../lib/aws-infrastructure-stack';
+import { SaasInfrastructureStack, VpcStackProps } from '../lib/saas-infrastructure-stack';
+import { VpcInfrastructureStack } from '../lib/vpc-infrastructure-stack';
 
 const app = new cdk.App();
-new AwsInfrastructureStack(app, 'AwsInfrastructureStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
-
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-});
+var vpcprops: VpcStackProps = {};
+if(config.get('useexistingvpc') == true && config.has('existingvpcid')) {
+  vpcprops.vpcid = config.get('existingvpcid') as String;
+}
+else {
+  const vpcStack = new VpcInfrastructureStack(app, 'VpcInfrastructureStack', {});
+  // vpcprops.cfnvpc = vpcStack.getCfnVpc();
+}
+new SaasInfrastructureStack(app, 'SaasInfrastructureStack', vpcprops);
+//TODO: Continue to implement the remainder of the infrastructure including BUI, MUI, etc...

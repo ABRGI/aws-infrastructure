@@ -15,7 +15,6 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import { RemovalPolicy } from 'aws-cdk-lib';
-import path = require('path');
 
 export class NelsonLoginProviderStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
