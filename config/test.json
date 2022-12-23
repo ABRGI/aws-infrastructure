@@ -1,5 +1,6 @@
 {
     "environmentname": "test",
     "domain": "test.nelson.management",
-    "applicationname": "Test - Nelson Management"
+    "applicationname": "Test - Nelson Management",
+    "existingvpcid": ""
 }

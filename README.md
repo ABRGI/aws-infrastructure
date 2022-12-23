@@ -7,9 +7,10 @@ Project structure
 - stacks are designed to be self contained with minimal dependency on external resources. If there is any dependency, the pass it as a parameter in the props of the stack or construct through the app
 
 ## Execution
-- Set the ENV variable to the environment that is being deployed
-- Create a config file with the ENV value to override the default values
-- Deploy individual apps by running `cdk deploy {appfile}.ts`
+- Set the NODE_ENV variable to the environment that is being deployed
+- Create a config file with the NODE_ENV value to override the default values
+- Create cloud formation templates and asset files using command `NODE_ENV={environmentname} cdk synth`
+- Deploy individual apps by running `cdk deploy {app}`
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 

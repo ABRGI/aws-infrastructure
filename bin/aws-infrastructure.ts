@@ -4,6 +4,7 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { SaasInfrastructureStack, VpcStackProps } from '../lib/saas-infrastructure-stack';
 import { VpcInfrastructureStack } from '../lib/vpc-infrastructure-stack';
+import { NelsonLoginProviderStack } from '../lib/nelson-login-provider-stack';
 
 const app = new cdk.App();
 
@@ -12,8 +13,14 @@ if(config.get('useexistingvpc') == true && config.has('existingvpcid')) {
   vpcprops.vpcid = config.get('existingvpcid') as String;
 }
 else {
-  const vpcStack = new VpcInfrastructureStack(app, 'VpcInfrastructureStack', {});
+  const vpcStack = new VpcInfrastructureStack(app, `${config.get('environmentname')}Vpc`, {});
   // vpcprops.cfnvpc = vpcStack.getCfnVpc();
 }
-new SaasInfrastructureStack(app, 'SaasInfrastructureStack', vpcprops);
+new SaasInfrastructureStack(app, `${config.get('environmentname')}SaasInfrastructure`, vpcprops);
 //TODO: Continue to implement the remainder of the infrastructure including BUI, MUI, etc...
+
+new NelsonLoginProviderStack(app, `${config.get('environmentname')}LoginProvider`, {
+  env: {
+      region: config.get('awsregion'),
+  }
+});

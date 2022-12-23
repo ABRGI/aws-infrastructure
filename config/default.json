@@ -7,5 +7,7 @@
     "usermanagementservice": {
         "nelsonuserpool": "nelson-users",
         "guestuserpool": "guest-users"
-    }
+    },
+    "useexistingvpc": false,
+    "awsregion": "eu-central-1"
 }
