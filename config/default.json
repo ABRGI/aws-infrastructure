@@ -1,0 +1,11 @@
+{
+    "environmentname": "nelson",
+    "domain": "nelson.management",
+    "adminloginpath": "#/login",
+    "landingpage": "#/users",
+    "applicationname": "Nelson Management",
+    "usermanagementservice": {
+        "nelsonuserpool": "nelson-users",
+        "guestuserpool": "guest-users"
+    }
+}
