@@ -9,8 +9,13 @@ Project structure
 ## Execution
 - Set the NODE_ENV variable to the environment that is being deployed
 - Create a config file with the NODE_ENV value to override the default values
-- Create cloud formation templates and asset files using command `NODE_ENV={environmentname} cdk synth`
-- Deploy individual apps by running `cdk deploy {app}`
+- Create cloud formation templates and asset files using command `NODE_ENV={environmentname} cdk synth --app "npx ts-node --prefer-ts-exts bin/{filename}.ts" [{stackname1}, {stackname2}]` --profile {profilename}
+- Deploy individual apps by running `NODE_ENV={environmentname} cdk deploy --app "npx ts-node --prefer-ts-exts bin/{filename}.ts" [{stackname1}, {stackname2}]` --profile {profilename}
+- Note that stack names are optional. If non specified, all stacks are built or deployed
+- If app is not specified, then the default app specified in cdk.json is used
+- Similar structure should work for cdk diff
+- If default profile should be used, ignore the profile attribute
+- Example code (to diff): `NODE_ENV=test cdk diff --app  "npx ts-node --prefer-ts-exts bin/user-management-service.ts" --profile nelson`
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
