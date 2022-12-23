@@ -1,21 +1,33 @@
 # AWS Infrastructure code for Nelson services
 
 The language to be used for this project is TypeScript.
-Project structure
+
+## Project structure
+
 - bin folder contains the final service or application deployment code. This will combine multiple stacks as required
 - lib folder contains the individual stacks or constructs
-- stacks are designed to be self contained with minimal dependency on external resources. If there is any dependency, the pass it as a parameter in the props of the stack or construct through the app
+- stacks are designed to be self contained with minimal dependency on external resources. If there is any dependency, then pass it as a parameter in the props of the stack or construct through the app
+- config folder contains the default config which **MUST** contain all configs used in the code. Tenant specific coinfig files are also created which will override the default config value based on the NODE_ENV environment variable value at runtime
+
+## Dependencies
+
+Project uses AWS CDK V2. For list of dependencies, refer the [AWS CDK V2 documentation](https://docs.aws.amazon.com/cdk/index.html). Alternatively, refer the [CDK Workshop website](https://cdkworkshop.com/15-prerequisites.html) for simple tutorial
 
 ## Execution
+
+- Run npm install when running for the first time to download required node modules
 - Set the NODE_ENV variable to the environment that is being deployed
 - Create a config file with the NODE_ENV value to override the default values
-- Create cloud formation templates and asset files using command `NODE_ENV={environmentname} cdk synth --app "npx ts-node --prefer-ts-exts bin/{filename}.ts" [{stackname1}, {stackname2}]` --profile {profilename}
-- Deploy individual apps by running `NODE_ENV={environmentname} cdk deploy --app "npx ts-node --prefer-ts-exts bin/{filename}.ts" [{stackname1}, {stackname2}]` --profile {profilename}
-- Note that stack names are optional. If non specified, all stacks are built or deployed
+- Create cloud formation templates and asset files using command `NODE_ENV={environment} appscript={target app script name} stack={target stack} npm run synth -- --profile {aws profile name}`
+- To diff the code with what is on CloudFormation, run command `NODE_ENV={environment} appscript={target app script name} stack={target stack} npm run diff -- --profile {aws profile name}`
+- Deploy individual apps by running `NODE_ENV={environment} appscript={target app script name} stack={target stack} npm run deploy -- --profile {aws profile name}`
+- Note that stack name is optional. If non specified, all stacks are built or deployed as part of the app
 - If app is not specified, then the default app specified in cdk.json is used
 - Similar structure should work for cdk diff
 - If default profile should be used, ignore the profile attribute
-- Example code (to diff): `NODE_ENV=test cdk diff --app  "npx ts-node --prefer-ts-exts bin/user-management-service.ts" --profile nelson`
+- Example code (to diff): `NODE_ENV=test appscript=user-management-service stack=TestLoginProvide npm run diff -- --profile nelson`
+- run `cdk diff` or `cdk synth` or `cdk deploy` to run for default app specified in cdk.json
+- If running code on Windows, update package.json scripts to use environment variables in format `%variablename%` instead of `$variablename`. Set environment variables using the SET {variable}={value} command
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
@@ -27,3 +39,8 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk deploy`      deploy this stack to your default AWS account/region
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
+* `NODE_ENV={environment} appscript={target app script name} stack={target stack} npm run {diff|synth|deploy} -- --profile {aws profile name}`       runs the diff, synth or deploy commands
+
+## Notes
+
+- Remember to bootstrap the environment using `cdk bootstrap` command. Follow [Bootstraping with CDK](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) for more information
