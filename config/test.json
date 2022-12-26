@@ -1,6 +1,16 @@
 {
-    "environmentname": "test",
+    "environmentname": "Test",
     "domain": "test.nelson.management",
     "applicationname": "Test - Nelson Management",
-    "existingvpcid": ""
+    "existingvpcid": "",
+    "nelsonloginproviderstack": {
+        "nelsonuserpool": "test-nelson-users",
+        "guestuserpool": "test-guest-users"
+    },
+    "nelsonusermanagementservicetack": {
+        "usertable": "test-user-management-users",
+        "accessrolestable": "test-user-management-access-roles",
+        "accessrightstable": "test-user-management-access-rights"
+    },
+    "defaultremovalpolicy": "destroy"
 }

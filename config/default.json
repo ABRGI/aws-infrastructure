@@ -1,13 +1,24 @@
 {
-    "environmentname": "nelson",
+    "environmentname": "Nelson",
     "domain": "nelson.management",
     "adminloginpath": "#/login",
     "landingpage": "#/users",
     "applicationname": "Nelson Management",
-    "usermanagementservice": {
-        "nelsonuserpool": "nelson-users",
-        "guestuserpool": "guest-users"
+    "nelsonloginproviderstack": {
+        "nelsonuserpool": "test-nelson-users",
+        "guestuserpool": "test-guest-users",
+        "dynamogettables": [
+            "user-management-access-roles",
+            "user-management-access-rights",
+            "user-management-users"
+        ]
+    },
+    "nelsonusermanagementservicetack": {
+        "usertable": "user-management-users",
+        "accessrolestable": "user-management-access-roles",
+        "accessrightstable": "user-management-access-rights"
     },
     "useexistingvpc": false,
-    "awsregion": "eu-central-1"
+    "awsregion": "eu-central-1",
+    "defaultremovalpolicy": "retain"
 }
