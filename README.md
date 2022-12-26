@@ -26,6 +26,7 @@ Project uses AWS CDK V2. For list of dependencies, refer the [AWS CDK V2 documen
 - Similar structure should work for cdk diff
 - If default profile should be used, ignore the profile attribute
 - Example code (to diff): `NODE_ENV=test appscript=user-management-service stack=TestLoginProvide npm run diff -- --profile nelson`
+- Use stack=-all to deploy all stacks if the app has multiple stacks: `NODE_ENV=test appscript=user-management-service stack=--all npm run deploy -- --profile nelson`
 - run `cdk diff` or `cdk synth` or `cdk deploy` to run for default app specified in cdk.json
 - If running code on Windows, update package.json scripts to use environment variables in format `%variablename%` instead of `$variablename`. Set environment variables using the SET {variable}={value} command
 
