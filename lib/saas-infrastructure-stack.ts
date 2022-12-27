@@ -9,11 +9,11 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RemovalPolicy } from 'aws-cdk-lib';
-import { CfnVPC } from 'aws-cdk-lib/aws-ec2';
+import { Vpc } from 'aws-cdk-lib/aws-ec2';
 
 export interface VpcStackProps extends cdk.StackProps {
     vpcid?: String
-    cfnvpc?: CfnVPC
+    vpc?: Vpc
 }
 
 export class SaasInfrastructureStack extends cdk.Stack {

@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 import * as config from 'config';
-import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { SaasInfrastructureStack, VpcStackProps } from '../lib/saas-infrastructure-stack';
 import { VpcInfrastructureStack } from '../lib/vpc-infrastructure-stack';
-import { NelsonLoginProviderStack } from '../lib/nelson-login-provider-stack';
 
 const app = new cdk.App();
 
@@ -18,13 +16,7 @@ else {
             region: config.get('awsregion')
         }
     });
-    // vpcprops.cfnvpc = vpcStack.getCfnVpc();
+    vpcprops.vpc = vpcStack.nelsonVPC;
 }
 new SaasInfrastructureStack(app, `${config.get('environmentname')}SaasInfrastructure`, vpcprops);
 //TODO: Continue to implement the remainder of the infrastructure including BUI, MUI, etc...
-
-new NelsonLoginProviderStack(app, `${config.get('environmentname')}LoginProvider`, {
-    env: {
-        region: config.get('awsregion')
-    }
-});
