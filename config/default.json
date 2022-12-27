@@ -9,6 +9,7 @@
         "guestuserpool": "guest-users"
     },
     "useexistingvpc": false,
+    "existingvpcname": "",
     "awsregion": "eu-central-1",
     "vpcservice": {
         "cidr": "17.0.0.0/16",

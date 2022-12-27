@@ -7,8 +7,8 @@ import { VpcInfrastructureStack } from '../lib/vpc-infrastructure-stack';
 const app = new cdk.App();
 
 var vpcprops: VpcStackProps = {};
-if (config.get('useexistingvpc') == true && config.has('existingvpcid')) {
-    vpcprops.vpcid = config.get('existingvpcid') as String;
+if (config.get('useexistingvpc') == true && config.has('existingvpcname')) {
+    vpcprops.vpcname = config.get('existingvpcname') as string;
 }
 else {
     const vpcStack = new VpcInfrastructureStack(app, `${config.get('environmentname')}VPC`, {
