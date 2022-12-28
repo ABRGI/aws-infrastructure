@@ -13,6 +13,7 @@ import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatem
 
 export class NelsonManagementHostedZoneStack extends cdk.Stack {
     hostedZone: IHostedZone;
+    domainCertificate: cdk.aws_certificatemanager.Certificate;
 
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
@@ -39,15 +40,15 @@ export class NelsonManagementHostedZoneStack extends cdk.Stack {
         }
         //Create a new certificate for new sub domain. Only if we need to create a new cert. If not, we will reuse existing cert
         if (config.get('hostedzonestack.createnewsubdomaincertificate')) {
-            const domainCertificate = new Certificate(this, 'NelsonManagementDomainCertificate', {
+            this.domainCertificate = new Certificate(this, 'NelsonManagementDomainCertificate', {
                 domainName: config.get('domain'),
                 validation: CertificateValidation.fromDns(this.hostedZone),
                 certificateName: `${config.get('environmentname')}DomainCertificate`
             });
-            domainCertificate.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            this.domainCertificate.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
             //Tag certificate
-            cdk.Aspects.of(domainCertificate).add(
+            cdk.Aspects.of(this.domainCertificate).add(
                 new cdk.Tag('nelson:environment', config.get('environmentname'))
             );
         }

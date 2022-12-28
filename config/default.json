@@ -1,6 +1,6 @@
 {
     "environmentname": "Nelson",
-    "domain": "nelson.management",
+    "domain": "admin.nelson.management",
     "hostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
