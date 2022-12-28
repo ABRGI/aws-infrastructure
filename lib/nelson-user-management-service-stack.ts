@@ -22,7 +22,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             * Access Roles
             * Access Rights
         */
-        const usertable = new dynamodb.Table(this, 'usertable', {
+        const userTable = new dynamodb.Table(this, 'usertable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: config.get('nelsonusermanagementservicetack.usertable'),
@@ -32,7 +32,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             writeCapacity: 2
         });
 
-        const accessrolestable = new dynamodb.Table(this, 'accessrolestable', {
+        const accessRolesTable = new dynamodb.Table(this, 'accessrolestable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: config.get('nelsonusermanagementservicetack.accessrolestable'),
@@ -42,7 +42,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             writeCapacity: 2
         });
 
-        const accessrightstable = new dynamodb.Table(this, 'accessrightstable', {
+        const accessRightsTable = new dynamodb.Table(this, 'accessrightstable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: config.get('nelsonusermanagementservicetack.accessrightstable'),
@@ -60,7 +60,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             * Forgot password
             * Create/update rights (Probably called only from a dev machine)
         */
-        const listusersfn = new lambda.Function(this, 'ListUsersFunction', {
+        const listUsersFn = new lambda.Function(this, 'ListUsersFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
@@ -75,7 +75,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             }
         });
 
-        const updateuserfn = new lambda.Function(this, 'CrudUserFunction', {
+        const updateUserFn = new lambda.Function(this, 'CrudUserFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
@@ -90,7 +90,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             }
         });
 
-        const updaterolefn = new lambda.Function(this, 'CrudRolesFunction', {
+        const updateRoleFn = new lambda.Function(this, 'CrudRolesFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
@@ -104,7 +104,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             }
         });
 
-        const getuserinfofn = new lambda.Function(this, 'GetUserInfoFunction', {
+        const getUserInfoFn = new lambda.Function(this, 'GetUserInfoFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
@@ -119,7 +119,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             }
         });
 
-        const forgotuserpasswordfn = new lambda.Function(this, 'ForgotUserPasswordFunction', {
+        const forgotUserPasswordFn = new lambda.Function(this, 'ForgotUserPasswordFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
@@ -129,7 +129,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             description: 'This function is used to generated the required actions for user to recover password'
         });
 
-        const updaterightsfun = new lambda.Function(this, 'CrudRightsFunction', {
+        const updateUserRightsFn = new lambda.Function(this, 'CrudRightsFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
@@ -143,166 +143,176 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         });
 
         //Step 3: Grant lambda dynamo permissions
-        usertable.grantReadWriteData(updateuserfn);
-        usertable.grantReadData(listusersfn);
-        usertable.grantReadData(getuserinfofn);
-        accessrolestable.grantReadWriteData(updaterolefn);
-        accessrolestable.grantReadData(listusersfn);
-        accessrolestable.grantReadData(updateuserfn);
-        accessrightstable.grantReadWriteData(updaterightsfun);
-        accessrightstable.grantReadData(updaterolefn);
-        accessrightstable.grantReadData(updateuserfn);
-        accessrightstable.grantReadData(listusersfn);
+        userTable.grantReadWriteData(updateUserFn);
+        userTable.grantReadData(listUsersFn);
+        userTable.grantReadData(getUserInfoFn);
+        accessRolesTable.grantReadWriteData(updateRoleFn);
+        accessRolesTable.grantReadData(listUsersFn);
+        accessRolesTable.grantReadData(updateUserFn);
+        accessRightsTable.grantReadWriteData(updateUserRightsFn);
+        accessRightsTable.grantReadData(updateRoleFn);
+        accessRightsTable.grantReadData(updateUserFn);
+        accessRightsTable.grantReadData(listUsersFn);
 
         //Step 4: Create the API gateway and methods
-        const usermanagementserviceapigw = new apigw.RestApi(this, 'UserManagementServiceApi', {
+        const userManagementServiceApiGw = new apigw.RestApi(this, 'UserManagementServiceApi', {
             restApiName: `${config.get('environmentname')}UserManagementServiceAPI`,
             description: 'Rest API to manage the Nelson User Management Service',
             retainDeployments: false,
             deploy: false
         });
         //Step 4.1: Add API authoriziation layer
-        const userpool = cognito.UserPool.fromUserPoolId(this, "userpool", config.get('nelsonloginproviderstack.nelsonuserpool'));
-        const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'usermanagementserviceauthorizer', {
-            cognitoUserPools: [userpool]
+        const userPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", config.get('nelsonloginproviderstack.nelsonuserpool'));
+        const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'UserManagementServiceAuthorizer', {
+            cognitoUserPools: [userPool]
         });
-        const methodoptions = {
+        const methodOptions = {
             authorizer: auth,
             authorizationType: apigw.AuthorizationType.COGNITO
         };
-        const listusersresource = usermanagementserviceapigw.root.addResource('listusers');
-        listusersresource.addMethod('GET', new apigw.LambdaIntegration(listusersfn), methodoptions);
-        const usersresource = usermanagementserviceapigw.root.addResource('user');
-        usersresource.addMethod('GET', new apigw.LambdaIntegration(getuserinfofn), methodoptions);
-        usersresource.addMethod('POST', new apigw.LambdaIntegration(updateuserfn), methodoptions);
-        const rolesresource = usermanagementserviceapigw.root.addResource('roles');
-        const updateroleintegration = new apigw.LambdaIntegration(updaterolefn)
-        rolesresource.addMethod('GET', updateroleintegration, methodoptions);
-        rolesresource.addMethod('POST', updateroleintegration, methodoptions);
-        const rightresource = usermanagementserviceapigw.root.addResource('rights');
-        const updaterightintegration = new apigw.LambdaIntegration(updaterolefn)
-        rightresource.addMethod('GET', updaterightintegration, methodoptions);
-        rightresource.addMethod('POST', updaterightintegration, methodoptions);
-        const forgotpasswordresource = usermanagementserviceapigw.root.addResource('forgotpassword');
-        forgotpasswordresource.addMethod('POST', new apigw.LambdaIntegration(forgotuserpasswordfn), methodoptions);
+        const listusersresource = userManagementServiceApiGw.root.addResource('listusers');
+        listusersresource.addMethod('GET', new apigw.LambdaIntegration(listUsersFn), methodOptions);
+        const usersresource = userManagementServiceApiGw.root.addResource('user');
+        usersresource.addMethod('GET', new apigw.LambdaIntegration(getUserInfoFn), methodOptions);
+        usersresource.addMethod('POST', new apigw.LambdaIntegration(updateUserFn), methodOptions);
+        const rolesresource = userManagementServiceApiGw.root.addResource('roles');
+        const updateroleintegration = new apigw.LambdaIntegration(updateRoleFn)
+        rolesresource.addMethod('GET', updateroleintegration, methodOptions);
+        rolesresource.addMethod('POST', updateroleintegration, methodOptions);
+        const rightresource = userManagementServiceApiGw.root.addResource('rights');
+        const updaterightintegration = new apigw.LambdaIntegration(updateRoleFn)
+        rightresource.addMethod('GET', updaterightintegration, methodOptions);
+        rightresource.addMethod('POST', updaterightintegration, methodOptions);
+        const forgotpasswordresource = userManagementServiceApiGw.root.addResource('forgotpassword');
+        forgotpasswordresource.addMethod('POST', new apigw.LambdaIntegration(forgotUserPasswordFn), methodOptions);
 
-        const usermanagementservicedeployment = new apigw.Deployment(this, 'usermanagementservicedeployment', {
-            api: usermanagementserviceapigw,
+        const userManagementServiceDeployment = new apigw.Deployment(this, 'UserManagementServiceDeployment', {
+            api: userManagementServiceApiGw,
             retainDeployments: false
         });
-        new apigw.Stage(this, "usermanagementservicestage", {
-            deployment: usermanagementservicedeployment,
+        new apigw.Stage(this, "UserManagementServiceStage", {
+            deployment: userManagementServiceDeployment,
             stageName: config.get('environmentname')
         });
 
         //Step 5: Define Cfn outputs
-        new cdk.CfnOutput(this, 'usertableoutput', {
-            value: usertable.tableArn,
+        new cdk.CfnOutput(this, 'UserTableOutput', {
+            value: userTable.tableArn,
             description: "Arn of the user table",
             exportName: 'usertableoutput'
         });
 
-        new cdk.CfnOutput(this, 'accessrolestableoutput', {
-            value: accessrolestable.tableArn,
+        new cdk.CfnOutput(this, 'AccessRolesTableOutput', {
+            value: accessRolesTable.tableArn,
             description: "Arn of the accessroles table",
             exportName: 'accessrolestableoutput'
         });
 
-        new cdk.CfnOutput(this, 'accessrightstableoutput', {
-            value: accessrightstable.tableArn,
+        new cdk.CfnOutput(this, 'AccessRightsTableOutput', {
+            value: accessRightsTable.tableArn,
             description: "Arn of the accessrights table",
             exportName: 'accessrightstableoutput'
         });
 
         //Step 6: Tag resources
-        cdk.Aspects.of(usertable).add(
+        cdk.Aspects.of(userTable).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(usertable).add(
+        cdk.Aspects.of(userTable).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(usertable).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(userTable).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(accessrolestable).add(
+        cdk.Aspects.of(accessRolesTable).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(accessrolestable).add(
+        cdk.Aspects.of(accessRolesTable).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(accessrolestable).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(accessRolesTable).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(accessrightstable).add(
+        cdk.Aspects.of(accessRightsTable).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(accessrightstable).add(
+        cdk.Aspects.of(accessRightsTable).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(accessrightstable).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(accessRightsTable).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(listusersfn).add(
+        cdk.Aspects.of(listUsersFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(listusersfn).add(
+        cdk.Aspects.of(listUsersFn).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(listusersfn).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(listUsersFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(updateuserfn).add(
+        cdk.Aspects.of(updateUserFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(updateuserfn).add(
+        cdk.Aspects.of(updateUserFn).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(updateuserfn).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(updateUserFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(updaterolefn).add(
+        cdk.Aspects.of(updateRoleFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(updaterolefn).add(
+        cdk.Aspects.of(updateRoleFn).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(updaterolefn).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(updateRoleFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(getuserinfofn).add(
+        cdk.Aspects.of(getUserInfoFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(getuserinfofn).add(
+        cdk.Aspects.of(getUserInfoFn).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(getuserinfofn).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(getUserInfoFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(forgotuserpasswordfn).add(
+        cdk.Aspects.of(forgotUserPasswordFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(forgotuserpasswordfn).add(
+        cdk.Aspects.of(forgotUserPasswordFn).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(forgotuserpasswordfn).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(forgotUserPasswordFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(updaterightsfun).add(
+        cdk.Aspects.of(updateUserRightsFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(updaterightsfun).add(
+        cdk.Aspects.of(updateUserRightsFn).add(
             new cdk.Tag('nelson:role', `user-management-service`)
         );
-        cdk.Aspects.of(updaterightsfun).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(updateUserRightsFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        
+        cdk.Aspects.of(userManagementServiceApiGw).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(userManagementServiceApiGw).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(userManagementServiceApiGw).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
     }
 }

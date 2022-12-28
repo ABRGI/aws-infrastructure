@@ -1,6 +1,11 @@
 {
     "environmentname": "Nelson",
     "domain": "nelson.management",
+    "hostedzonestack": {
+        "hostedzone": "nelson.management",
+        "createnewsubdomaincertificate": true,
+        "createnelsonmanagementcloudfrontentry": true
+    },
     "adminloginpath": "#/login",
     "landingpage": "#/users",
     "applicationname": "Nelson Management",
@@ -19,6 +24,5 @@
         "accessrightstable": "user-management-access-rights"
     },
     "useexistingvpc": false,
-    "awsregion": "eu-central-1",
     "defaultremovalpolicy": "retain"
 }

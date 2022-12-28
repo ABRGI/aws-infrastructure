@@ -22,7 +22,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         super(scope, id, props);
 
         //Step 1: Create the user pool
-        const nelsonuserpool = new cognito.UserPool(this, 'NelsonUserPool', {
+        const nelsonUserPool = new cognito.UserPool(this, 'NelsonUserPool', {
             accountRecovery: cognito.AccountRecovery.NONE,
             deviceTracking: {
                 challengeRequiredOnNewDevice: false,
@@ -47,7 +47,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         });
 
         //Step 2: Create lambda trigger for post auth
-        const pretokengeneratorfn = new lambda.Function(this, 'PreTokenGenerator', {
+        const preTokenGeneratorFn = new lambda.Function(this, 'PreTokenGenerator', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
@@ -58,49 +58,49 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         });
 
         //Step 3: Add trigger to userpool
-        nelsonuserpool.addTrigger(cognito.UserPoolOperation.PRE_TOKEN_GENERATION, pretokengeneratorfn);
+        nelsonUserPool.addTrigger(cognito.UserPoolOperation.PRE_TOKEN_GENERATION, preTokenGeneratorFn);
 
         //Step 4: Add permissions to the pretokengenerator function to access the correct Dynamo DB tables
-        const usertable = dynamodb.Table.fromTableName(this, 'usertable', config.get('nelsonusermanagementservicetack.usertable'));
-        const accessrolestable = dynamodb.Table.fromTableName(this, 'accessrolestable', config.get('nelsonusermanagementservicetack.accessrolestable'));
-        const accessrightstable = dynamodb.Table.fromTableName(this, 'accessrightstable', config.get('nelsonusermanagementservicetack.accessrightstable'));
+        const userTable = dynamodb.Table.fromTableName(this, 'usertable', config.get('nelsonusermanagementservicetack.usertable'));
+        const accessRolesTable = dynamodb.Table.fromTableName(this, 'accessrolestable', config.get('nelsonusermanagementservicetack.accessrolestable'));
+        const accessRightsTable = dynamodb.Table.fromTableName(this, 'accessrightstable', config.get('nelsonusermanagementservicetack.accessrightstable'));
 
-        usertable.grantReadData(pretokengeneratorfn);
-        accessrolestable.grantReadData(pretokengeneratorfn);
-        accessrightstable.grantReadData(pretokengeneratorfn);
+        userTable.grantReadData(preTokenGeneratorFn);
+        accessRolesTable.grantReadData(preTokenGeneratorFn);
+        accessRightsTable.grantReadData(preTokenGeneratorFn);
 
         //Step 5: Add Cfn outputs as required
         new cdk.CfnOutput(this, 'PreTokenGeneratorOutput', {
-            value: pretokengeneratorfn.functionArn,
+            value: preTokenGeneratorFn.functionArn,
             description: 'Pre-token generator function ARN',
             exportName: 'pretokengeneratorfnoutput'
         });
 
         new cdk.CfnOutput(this, 'NelsonUserPoolOutput', {
-            value: nelsonuserpool.userPoolArn,
+            value: nelsonUserPool.userPoolArn,
             description: 'Nelson user pool ARN',
             exportName: 'nelsonuserpooloutput'
         });
 
         //Step 6: Add tags to resources
-        cdk.Aspects.of(nelsonuserpool).add(
+        cdk.Aspects.of(nelsonUserPool).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(nelsonuserpool).add(
+        cdk.Aspects.of(nelsonUserPool).add(
             new cdk.Tag('nelson:role', `login-provider`)
         );
-        cdk.Aspects.of(nelsonuserpool).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(nelsonUserPool).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(pretokengeneratorfn).add(
+        cdk.Aspects.of(preTokenGeneratorFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(pretokengeneratorfn).add(
+        cdk.Aspects.of(preTokenGeneratorFn).add(
             new cdk.Tag('nelson:role', `login-provider`)
         );
-        cdk.Aspects.of(pretokengeneratorfn).add(
-            new cdk.Tag('nelson:env', config.get('environmentname'))
+        cdk.Aspects.of(preTokenGeneratorFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
     }
 }

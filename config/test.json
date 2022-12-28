@@ -1,6 +1,11 @@
 {
     "environmentname": "Test",
     "domain": "test.nelson.management",
+    "hostedzonestack": {
+        "hostedzone": "nelson.management",
+        "createnewsubdomaincertificate": true,
+        "createnelsonmanagementcloudfrontentry": true
+    },
     "applicationname": "Test - Nelson Management",
     "existingvpcid": "",
     "nelsonloginproviderstack": {
