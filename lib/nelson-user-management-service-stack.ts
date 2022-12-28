@@ -195,7 +195,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             stageName: config.get('environmentname')
         });
 
-        //Define Cfn outputs
+        //Step 5: Define Cfn outputs
         new cdk.CfnOutput(this, 'usertableoutput', {
             value: usertable.tableArn,
             description: "Arn of the user table",
@@ -213,5 +213,96 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             description: "Arn of the accessrights table",
             exportName: 'accessrightstableoutput'
         });
+
+        //Step 6: Tag resources
+        cdk.Aspects.of(usertable).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(usertable).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(usertable).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(accessrolestable).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(accessrolestable).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(accessrolestable).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(accessrightstable).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(accessrightstable).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(accessrightstable).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(listusersfn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(listusersfn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(listusersfn).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(updateuserfn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(updateuserfn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(updateuserfn).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(updaterolefn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(updaterolefn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(updaterolefn).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(getuserinfofn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(getuserinfofn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(getuserinfofn).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(forgotuserpasswordfn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(forgotuserpasswordfn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(forgotuserpasswordfn).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(updaterightsfun).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(updaterightsfun).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(updaterightsfun).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
     }
 }

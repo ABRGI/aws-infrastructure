@@ -81,5 +81,26 @@ export class NelsonLoginProviderStack extends cdk.Stack {
             description: 'Nelson user pool ARN',
             exportName: 'nelsonuserpooloutput'
         });
+
+        //Step 6: Add tags to resources
+        cdk.Aspects.of(nelsonuserpool).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(nelsonuserpool).add(
+            new cdk.Tag('nelson:role', `login-provider`)
+        );
+        cdk.Aspects.of(nelsonuserpool).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(pretokengeneratorfn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(pretokengeneratorfn).add(
+            new cdk.Tag('nelson:role', `login-provider`)
+        );
+        cdk.Aspects.of(pretokengeneratorfn).add(
+            new cdk.Tag('nelson:env', config.get('environmentname'))
+        );
     }
 }
