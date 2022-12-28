@@ -69,6 +69,7 @@ export class VpcInfrastructureStack extends cdk.Stack {
             );
         }
 
+        //Step4: Re-tagging for VPC
         cdk.Aspects.of(this.nelsonVPC).add(
             new cdk.Tag('nelson:client', nelsonClient)
         );
