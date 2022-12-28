@@ -9,17 +9,23 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RemovalPolicy } from 'aws-cdk-lib';
-import { CfnVPC } from 'aws-cdk-lib/aws-ec2';
+import { Vpc, IVpc } from 'aws-cdk-lib/aws-ec2';
 
 export interface VpcStackProps extends cdk.StackProps {
-    vpcid?: String
-    cfnvpc?: CfnVPC
+    vpcname?: string
+    vpc?: IVpc
 }
 
 export class SaasInfrastructureStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: VpcStackProps) {
         super(scope, id, props);
-
-        //TODO: Validate VPC. Update the vpc stack props interface if required to get the correct data.
+        var nelsonVpc;
+        if (props?.vpcname != null) {
+            nelsonVpc = Vpc.fromLookup(this, 'VPC', {
+                vpcName: props.vpcname,
+            });
+        } else {
+            nelsonVpc = props?.vpc;
+        }
     }
 }
