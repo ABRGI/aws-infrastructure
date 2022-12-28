@@ -10,8 +10,7 @@ import * as config from 'config';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
-import { AllowedMethods, CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
-import { IRestApi } from 'aws-cdk-lib/aws-apigateway';
+import { CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { Duration } from 'aws-cdk-lib';
 import { Certificate, ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
@@ -33,8 +32,7 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
             originConfigs: [{
                 connectionTimeout: Duration.seconds(5),
                 customOriginSource: {
-                    domainName: `${props.apiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
-                    originPath: `/${config.get('environmentname')}`
+                    domainName: `${props.apiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`
                 },
                 behaviors: [
                     //Default behavior
@@ -44,7 +42,7 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
                     },
                     {
                         //User management service behavior
-                        pathPattern: '/usermanagement*',
+                        pathPattern: '/usermanagement/*',
                         compress: false,
                         isDefaultBehavior: false,
                         defaultTtl: Duration.minutes(5),

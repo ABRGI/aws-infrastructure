@@ -8,7 +8,6 @@
 */
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { RemovalPolicy } from 'aws-cdk-lib';
 import { Vpc, IVpc } from 'aws-cdk-lib/aws-ec2';
 
 export interface VpcStackProps extends cdk.StackProps {
