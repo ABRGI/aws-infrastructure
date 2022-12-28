@@ -26,7 +26,7 @@ export class VpcInfrastructureStack extends cdk.Stack {
                 {
                     name: 'public',
                     subnetType: ec2.SubnetType.PUBLIC,
-                    cidrMask: config.get('vpcservice.cidrMask')
+                    cidrMask: config.get('vpcservice.cidrMask'),
                 },
                 {
                     name: 'private',
@@ -36,6 +36,7 @@ export class VpcInfrastructureStack extends cdk.Stack {
             ],
             vpcName: `${nelsonEnv}-vpc`,
         });
+        this.nelsonVPC.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         // Step2: Re-tagging for publicSubnets
         for (const publicSubnet of this.nelsonVPC.publicSubnets) {

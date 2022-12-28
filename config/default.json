@@ -16,5 +16,6 @@
         "maxnatgateways": 1,
         "maxazs": 2,
         "cidrMask": 20
-    }
+    },
+    "defaultremovalpolicy": "destroy"
 }
