@@ -45,3 +45,4 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 ## Notes
 
 - Remember to bootstrap the environment using `cdk bootstrap` command. Follow [Bootstraping with CDK](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) for more information
+- These above scrips will be worked on cmd terminal. Visual code will open by default on powershell
