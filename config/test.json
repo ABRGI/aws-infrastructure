@@ -17,5 +17,13 @@
         "accessrolestable": "test-user-management-access-roles",
         "accessrightstable": "test-user-management-access-rights"
     },
-    "defaultremovalpolicy": "destroy"
+    "defaultremovalpolicy": "destroy",
+    "useexistingvpc": false,
+    "existingvpcname": "",
+    "vpcservice": {
+        "cidr": "17.0.0.0/16",
+        "maxnatgateways": 1,
+        "maxazs": 2,
+        "cidrMask": 20
+    }
 }

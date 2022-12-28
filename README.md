@@ -28,7 +28,6 @@ Project uses AWS CDK V2. For list of dependencies, refer the [AWS CDK V2 documen
 - Example code (to diff): `NODE_ENV=test appscript=user-management-service stack=TestLoginProvide npm run diff -- --profile nelson`
 - Use stack=-all to deploy all stacks if the app has multiple stacks: `NODE_ENV=test appscript=user-management-service stack=--all npm run deploy -- --profile nelson`
 - run `cdk diff` or `cdk synth` or `cdk deploy` to run for default app specified in cdk.json
-- If running code on Windows, update package.json scripts to use environment variables in format `%variablename%` instead of `$variablename`. Set environment variables using the SET {variable}={value} command
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
@@ -45,3 +44,5 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 ## Notes
 
 - Remember to bootstrap the environment using `cdk bootstrap` command. Follow [Bootstraping with CDK](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) for more information
+- If running code on Windows, update package.json scripts to use environment variables in format `%variablename%` instead of `$variablename`. Set environment variables using the SET {variable}={value} command
+- Remember to check the type of terminal when running the code from VS Code. If windows, modify execution scripts based on powershell or cmd terminal type

@@ -24,5 +24,12 @@
         "accessrightstable": "user-management-access-rights"
     },
     "useexistingvpc": false,
-    "defaultremovalpolicy": "retain"
+    "existingvpcname": "",
+    "vpcservice": {
+        "cidr": "17.0.0.0/16",
+        "maxnatgateways": 1,
+        "maxazs": 2,
+        "cidrMask": 20
+    },
+    "defaultremovalpolicy": "snapshot"
 }
