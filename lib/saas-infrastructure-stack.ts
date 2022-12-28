@@ -19,11 +19,13 @@ export interface VpcStackProps extends cdk.StackProps {
 export class SaasInfrastructureStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: VpcStackProps) {
         super(scope, id, props);
-        var nelsonVpc: IVpc;
+        var nelsonVpc;
         if (props?.vpcname != null) {
             nelsonVpc = Vpc.fromLookup(this, 'VPC', {
                 vpcName: props.vpcname,
             });
+        } else {
+            nelsonVpc = props?.vpc;
         }
     }
 }
