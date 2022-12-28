@@ -49,7 +49,7 @@ export class VpcInfrastructureStack extends cdk.Stack {
                 new cdk.Tag('nelson:role', nelsonRole)
             );
             cdk.Aspects.of(publicSubnet).add(
-                new cdk.Tag('nelson:env', nelsonEnv)
+                new cdk.Tag('nelson:environment', nelsonEnv)
             );
         }
 
@@ -65,7 +65,7 @@ export class VpcInfrastructureStack extends cdk.Stack {
                 new cdk.Tag('nelson:role', nelsonRole)
             );
             cdk.Aspects.of(privateSubnet).add(
-                new cdk.Tag('nelson:env', nelsonEnv)
+                new cdk.Tag('nelson:environment', nelsonEnv)
             );
         }
 
@@ -77,7 +77,7 @@ export class VpcInfrastructureStack extends cdk.Stack {
             new cdk.Tag('nelson:role', nelsonRole)
         );
         cdk.Aspects.of(this.nelsonVPC).add(
-            new cdk.Tag('nelson:env', nelsonEnv)
+            new cdk.Tag('nelson:environment', nelsonEnv)
         );
     }
 }
