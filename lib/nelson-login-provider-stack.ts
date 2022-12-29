@@ -29,10 +29,9 @@ export class NelsonLoginProviderStack extends cdk.Stack {
                 deviceOnlyRememberedOnUserPrompt: false
             },
             email: cognito.UserPoolEmail.withSES({
-                // fromEmail: `noreply@${config.get('domain')}`,
-                fromEmail: `sandeep@nelson.management`, //Change this to previous line once nelson.management is added as a domain identity in SES
+                fromEmail: `noreply@${config.get('nelsonloginproviderstack.loginprovideremaildomain')}`,
                 fromName: config.get('applicationname'),
-                // sesVerifiedDomain: config.get('domain')
+                sesVerifiedDomain: config.get('nelsonloginproviderstack.loginprovideremaildomain')
             }),
             enableSmsRole: false,
             removalPolicy: config.get('defaultremovalpolicy'),

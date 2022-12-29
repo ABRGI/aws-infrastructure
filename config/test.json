@@ -10,7 +10,8 @@
     "existingvpcid": "",
     "nelsonloginproviderstack": {
         "nelsonuserpool": "test-nelson-users",
-        "guestuserpool": "test-guest-users"
+        "guestuserpool": "test-guest-users",
+        "loginprovideremaildomain": "nelson.management"
     },
     "nelsonusermanagementservicetack": {
         "usertable": "test-user-management-users",

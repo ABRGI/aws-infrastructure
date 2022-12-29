@@ -59,7 +59,7 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
         //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
         new ARecord(this, 'NelsonManagementCloudFrontARecord', {
             zone: props.hostedZone,
-            recordName: String(config.get('domain')).split(`.${config.get('hostedzonestack.hostedzone')}`)[0],
+            recordName: String(config.get('domain')).split(`.${config.get('hostedzonestack.hostedzone')}`)[0],  //Get only the subdomain value
             comment: config.get('domain'),
             ttl: Duration.minutes(5),
             target: RecordTarget.fromAlias(new CloudFrontTarget(nelsonCfDistribution))
