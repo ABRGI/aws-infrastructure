@@ -38,7 +38,6 @@ export class S3InfrastructureStack extends cdk.Stack {
         cdk.Aspects.of(this.nelsonS3Bucket).add(
             new cdk.Tag('nelson:role', 'service')
         );
-
         cdk.Aspects.of(this.nelsonS3Bucket).add(
             new cdk.Tag('nelson:environment', 'saas')
         );
