@@ -12,7 +12,12 @@
     "nelsonloginproviderstack": {
         "nelsonuserpool": "test-nelson-users",
         "guestuserpool": "test-guest-users",
-        "loginprovideremaildomain": "nelson.management"
+        "loginprovideremaildomain": "nelson.management",
+        "logincallbackurls": ["https://admin.nelson.management/users"],
+        "appname": "nelsonmanagement",
+        "revealclientsecretinoutput": false,
+        "cognitodomainprefix": "nelsonmanagementlogin",
+        "loginurl": ""
     },
     "nelsonusermanagementservicetack": {
         "usertable": "user-management-users",

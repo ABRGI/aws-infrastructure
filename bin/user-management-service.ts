@@ -11,7 +11,6 @@
     Script needs to be run for a common AWS account.
     Remember to bootstrap execution region + N. Virginia (us-east-1)
 */
-import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { NelsonLoginProviderStack } from '../lib/nelson-login-provider-stack';
 import { NelsonUserManagementServiceStack } from '../lib/nelson-user-management-service-stack';
@@ -26,19 +25,20 @@ const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('
         region: 'us-east-1' //Certificate of the hosted zone needs to be in N. Virginia. Hosted zones are global anyway
     }
 });
-const userManagementServiceStack = new NelsonUserManagementServiceStack(app, `${config.get('environmentname')}UserManagementService`, {
+const loginProviderStack = new NelsonLoginProviderStack(app, `${config.get('environmentname')}LoginProvider`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
     }
 });
-new NelsonLoginProviderStack(app, `${config.get('environmentname')}LoginProvider`, {
+const userManagementServiceStack = new NelsonUserManagementServiceStack(app, `${config.get('environmentname')}UserManagementService`, {
     env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-    }
+    },
+    userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool'),
+    loginUrl: config.get('nelsonloginproviderstack.loginurl') != '' ? config.get('nelsonloginproviderstack.loginurl') : loginProviderStack.userPoolDomain.baseUrl()
 });
-const apiGatewayRestApiId = userManagementServiceStack.userManagementServiceApiGw.restApiId.toString();
-const apiGatewayRegion = userManagementServiceStack.region.toString();
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
@@ -46,7 +46,7 @@ new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}Nelson
     },
     hostedZone: hostedZoneStack.hostedZone,
     viewerAcmCertificateArn: hostedZoneStack.domainCertificate.certificateArn,
-    apiGatewayRestApiId: apiGatewayRestApiId,
-    apiGatewayRegion: apiGatewayRegion,
+    apiGatewayRestApiId: userManagementServiceStack.userManagementServiceApiGw.restApiId.toString(),
+    apiGatewayRegion: userManagementServiceStack.region.toString(),
     crossRegionReferences: true
 });

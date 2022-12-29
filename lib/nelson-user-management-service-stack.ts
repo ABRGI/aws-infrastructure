@@ -15,11 +15,16 @@ import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
 
+export interface UserManagementProps extends cdk.StackProps {
+    loginUrl: string,
+    userPoolName: string
+}
+
 export class NelsonUserManagementServiceStack extends cdk.Stack {
     userManagementServiceApiGw: cdk.aws_apigateway.RestApi;
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    constructor(scope: Construct, id: string, props: UserManagementProps) {
         super(scope, id, props);
-        const nelsonUserPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", config.get('nelsonloginproviderstack.nelsonuserpool'));
+        const nelsonUserPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", props.userPoolName);
         /*Step 1: Create the Dynamo DB tables
             * User
             * Access Roles
@@ -73,7 +78,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(3),
             description: 'This function helps to login the user',
             environment: {
-                COGNITO_ARN: nelsonUserPool.userPoolArn
+                COGNITO_ARN: nelsonUserPool.userPoolArn,
+                COGNITO_LOGIN_URL: props.loginUrl
             }
         });
 
