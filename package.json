@@ -12,7 +12,8 @@
     "startapp": "npx ts-node --prefer-ts-exts bin/$appscript.ts",
     "diff": "cdk diff $stack --app  \"npm run startapp\"",
     "synth": "cdk synth $stack --app  \"npm run startapp\"",
-    "deploy": "cdk deploy $stack --app  \"npm run startapp\""
+    "deploy": "cdk deploy $stack --app  \"npm run startapp\"",
+    "destroy": "cdk destroy $stack --app  \"npm run startapp\""
   },
   "devDependencies": {
     "@types/config": "^3.3.0",

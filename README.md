@@ -39,7 +39,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk deploy`      deploy this stack to your default AWS account/region
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
-* `NODE_ENV={environment} appscript={target app script name} stack={target stack} npm run {diff|synth|deploy} -- --profile {aws profile name}`       runs the diff, synth or deploy commands
+* `NODE_ENV={environment} appscript={target app script name} stack={target stack} npm run {diff|synth|deploy|destroy} -- --profile {aws profile name}`       runs the diff, synth, deploy or destroy commands
 
 ## Notes
 
