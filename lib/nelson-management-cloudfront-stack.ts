@@ -32,7 +32,8 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
             originConfigs: [{
                 connectionTimeout: Duration.seconds(5),
                 customOriginSource: {
-                    domainName: `${props.apiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`
+                    domainName: `${props.apiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
+                    originPath: `/${config.get('environmentname')}`
                 },
                 behaviors: [
                     //Default behavior
@@ -45,8 +46,7 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
                         pathPattern: '/usermanagement/*',
                         compress: false,
                         isDefaultBehavior: false,
-                        defaultTtl: Duration.minutes(5),
-                        allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
+                        allowedMethods: CloudFrontAllowedMethods.ALL,
                         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
                     }]
             }],

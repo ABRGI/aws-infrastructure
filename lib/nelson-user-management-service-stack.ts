@@ -13,6 +13,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
 
 export class NelsonUserManagementServiceStack extends cdk.Stack {
     userManagementServiceApiGw: cdk.aws_apigateway.RestApi;
@@ -171,15 +172,24 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         accessRightsTable.grantReadData(listUsersFn);
 
         //Step 4: Create the API gateway and methods
-        this.userManagementServiceApiGw = new apigw.RestApi(this, 'UserManagementServiceApi', {
-            restApiName: `${config.get('environmentname')}UserManagementServiceAPI`,
-            description: 'Rest API to manage the Nelson User Management Service',
+        // this.userManagementServiceApiGw = new apigw.RestApi(this, 'UserManagementServiceApi', {
+        //     restApiName: `${config.get('environmentname')}UserManagementServiceAPI`,
+        //     description: 'Rest API to manage the Nelson User Management Service',
+        //     retainDeployments: false,
+        //     deploy: false,
+        //     endpointTypes: [EndpointType.REGIONAL]
+        // });
+        this.userManagementServiceApiGw = new apigw.LambdaRestApi(this, 'UserManagementServiceApi', {
+            handler: loginFn,
+            proxy: false,
+            endpointTypes: [EndpointType.REGIONAL],
             retainDeployments: false,
+            description: 'Rest API to manage the Nelson User Management Service',
+            restApiName: `${config.get('environmentname')}UserManagementServiceAPI`,
+            disableExecuteApiEndpoint: true,
             deploy: false
         });
         //Step 4.1: Add API authoriziation layer
-        const userLoginResource = this.userManagementServiceApiGw.root.addResource('userlogin');
-        userLoginResource.addMethod('POST', new apigw.LambdaIntegration(loginFn));
         const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'UserManagementServiceAuthorizer', {
             cognitoUserPools: [nelsonUserPool]
         });
@@ -187,25 +197,28 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             authorizer: auth,
             authorizationType: apigw.AuthorizationType.COGNITO
         };
-        const listUsersResource = this.userManagementServiceApiGw.root.addResource('listusers');
+        const userManagementParentResource = this.userManagementServiceApiGw.root.addResource('usermanagement');
+        const userLoginResource = userManagementParentResource.addResource('userlogin');
+        userLoginResource.addMethod('POST', new apigw.LambdaIntegration(loginFn));
+        const listUsersResource = userManagementParentResource.addResource('listusers');
         listUsersResource.addMethod('GET', new apigw.LambdaIntegration(listUsersFn), methodOptions);
-        const usersResource = this.userManagementServiceApiGw.root.addResource('user');
+        const usersResource = userManagementParentResource.addResource('user');
         usersResource.addMethod('GET', new apigw.LambdaIntegration(getUserInfoFn), methodOptions);
         usersResource.addMethod('POST', new apigw.LambdaIntegration(updateUserFn), methodOptions);
-        const rolesResource = this.userManagementServiceApiGw.root.addResource('roles');
+        const rolesResource = userManagementParentResource.addResource('roles');
         const updateRoleIntegration = new apigw.LambdaIntegration(updateRoleFn)
         rolesResource.addMethod('GET', updateRoleIntegration, methodOptions);
         rolesResource.addMethod('POST', updateRoleIntegration, methodOptions);
-        const rightResource = this.userManagementServiceApiGw.root.addResource('rights');
+        const rightResource = userManagementParentResource.addResource('rights');
         const updateRightIntegration = new apigw.LambdaIntegration(updateRoleFn)
         rightResource.addMethod('GET', updateRightIntegration, methodOptions);
         rightResource.addMethod('POST', updateRightIntegration, methodOptions);
-        const forgotPasswordResource = this.userManagementServiceApiGw.root.addResource('forgotpassword');
+        const forgotPasswordResource = userManagementParentResource.addResource('forgotpassword');
         forgotPasswordResource.addMethod('POST', new apigw.LambdaIntegration(forgotUserPasswordFn), methodOptions);
 
         const userManagementServiceDeployment = new apigw.Deployment(this, 'UserManagementServiceDeployment', {
             api: this.userManagementServiceApiGw,
-            retainDeployments: false
+            retainDeployments: true
         });
         new apigw.Stage(this, "UserManagementServiceStage", {
             deployment: userManagementServiceDeployment,
