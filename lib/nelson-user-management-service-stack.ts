@@ -83,7 +83,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 COGNITO_LOGIN_URL: props.loginUrl,
                 ENV_REGION: this.region,
-                SECRET_NAME: props.clientSecret.secretName
+                SECRET_NAME: props.clientSecret.secretName,
+                USERPOOL_CLIENT_ID: props.clientId
             }
         });
         props.clientSecret.grantRead(loginFn);
@@ -162,7 +163,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 COGNITO_LOGIN_URL: props.loginUrl,
                 ENV_REGION: this.region,
-                SECRET_NAME: props.clientSecret.secretName
+                SECRET_NAME: props.clientSecret.secretName,
+                USERPOOL_CLIENT_ID: props.clientId
             }
         });
 
