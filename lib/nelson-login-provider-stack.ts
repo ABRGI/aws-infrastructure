@@ -17,10 +17,12 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import { ClientAttributes, OAuthScope } from 'aws-cdk-lib/aws-cognito';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 export class NelsonLoginProviderStack extends cdk.Stack {
     userPoolDomain: cdk.aws_cognito.UserPoolDomain;
     userPoolClient: cdk.aws_cognito.UserPoolClient;
+    userPoolClientSecret: cdk.aws_secretsmanager.Secret;
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
@@ -89,6 +91,14 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         });
         this.userPoolClient.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
+        //Step 1.2.1: Add the client secret to secrets manager
+        this.userPoolClientSecret = new Secret(this, 'UserPoolClientSecret', {
+            description: `Secret for ${config.get('environmentname')} env userpool ${config.get('nelsonloginproviderstack.appname')} client secret`,
+            secretName: `${config.get('environmentname')}_${config.get('nelsonloginproviderstack.nelsonuserpool')}_${config.get('nelsonloginproviderstack.appname')}`,
+            secretStringValue: this.userPoolClient.userPoolClientSecret
+        })
+        this.userPoolClientSecret.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
         //Step 2: Create lambda trigger for post auth
         const preTokenGeneratorFn = new lambda.Function(this, 'PreTokenGenerator', {
             runtime: lambda.Runtime.NODEJS_18_X,
@@ -152,6 +162,16 @@ export class NelsonLoginProviderStack extends cdk.Stack {
             new cdk.Tag('nelson:role', `login-provider`)
         );
         cdk.Aspects.of(preTokenGeneratorFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(this.userPoolClientSecret).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(this.userPoolClientSecret).add(
+            new cdk.Tag('nelson:role', `login-provider`)
+        );
+        cdk.Aspects.of(this.userPoolClientSecret).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
     }

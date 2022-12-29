@@ -37,7 +37,9 @@ const userManagementServiceStack = new NelsonUserManagementServiceStack(app, `${
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
     },
     userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool'),
-    loginUrl: config.get('nelsonloginproviderstack.loginurl') != '' ? config.get('nelsonloginproviderstack.loginurl') : loginProviderStack.userPoolDomain.baseUrl()
+    loginUrl: config.get('nelsonloginproviderstack.loginurl') != '' ? config.get('nelsonloginproviderstack.loginurl') : loginProviderStack.userPoolDomain.baseUrl(),
+    clientId: loginProviderStack.userPoolClient.userPoolClientId,
+    clientSecret: loginProviderStack.userPoolClientSecret
 });
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {

@@ -14,10 +14,13 @@ import { Construct } from 'constructs';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 export interface UserManagementProps extends cdk.StackProps {
     loginUrl: string,
-    userPoolName: string
+    userPoolName: string,
+    clientId: string,
+    clientSecret: Secret
 }
 
 export class NelsonUserManagementServiceStack extends cdk.Stack {
@@ -78,10 +81,12 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(3),
             description: 'This function helps to login the user',
             environment: {
-                COGNITO_ARN: nelsonUserPool.userPoolArn,
-                COGNITO_LOGIN_URL: props.loginUrl
+                COGNITO_LOGIN_URL: props.loginUrl,
+                ENV_REGION: this.region,
+                SECRET_NAME: props.clientSecret.secretName
             }
         });
+        props.clientSecret.grantRead(loginFn);
 
         const listUsersFn = new lambda.Function(this, 'ListUsersFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
@@ -94,7 +99,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -109,7 +115,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -123,7 +130,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             description: 'This function is used to update a role with rights and access levels',
             environment: {
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -138,7 +146,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -149,7 +158,12 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
             functionName: `${config.get('environmentname')}ForgotUserPassword`,
             timeout: cdk.Duration.seconds(3),
-            description: 'This function is used to generated the required actions for user to recover password'
+            description: 'This function is used to generated the required actions for user to recover password',
+            environment: {
+                COGNITO_LOGIN_URL: props.loginUrl,
+                ENV_REGION: this.region,
+                SECRET_NAME: props.clientSecret.secretName
+            }
         });
 
         const updateUserRightsFn = new lambda.Function(this, 'CrudRightsFunction', {
@@ -161,7 +175,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(3),
             description: 'This function is used to add new rights to the access rights table for reference',
             environment: {
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
