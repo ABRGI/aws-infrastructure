@@ -25,5 +25,7 @@
         "maxnatgateways": 1,
         "maxazs": 2,
         "cidrMask": 20
-    }
+    },
+    "bucketname": "test.nelson.management",
+    "useexistingbucket": false
 }

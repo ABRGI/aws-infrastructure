@@ -31,5 +31,8 @@
         "maxazs": 2,
         "cidrMask": 20
     },
-    "defaultremovalpolicy": "snapshot"
+    "defaultremovalpolicy": "snapshot",
+    "bucketname": "admin.nelson.management",
+    "useexistingbucket": false,
+    "publicreadaccess": true
 }
