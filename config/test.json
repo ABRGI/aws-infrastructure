@@ -27,5 +27,12 @@
         "cidrMask": 20
     },
     "bucketname": "test.nelson.management",
-    "useexistingbucket": false
+    "useexistingbucket": false,
+    "nelsonsaasbucket": {
+        "buibucketname": "test.bookn.io",
+        "useexistingbuibucket": false,
+        "muibucketname": "test.nelson.management",
+        "useexistingmuibucket": true,
+        "publicreadaccess": true
+    }
 }

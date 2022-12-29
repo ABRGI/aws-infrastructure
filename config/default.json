@@ -32,7 +32,11 @@
         "cidrMask": 20
     },
     "defaultremovalpolicy": "snapshot",
-    "bucketname": "admin.nelson.management",
-    "useexistingbucket": false,
-    "publicreadaccess": true
+    "nelsonsaasbucket": {
+        "buibucketname": "test.bookn.io",
+        "useexistingbuibucket": false,
+        "muibucketname": "test.nelson.management",
+        "useexistingmuibucket": false,
+        "publicreadaccess": true
+    }
 }
