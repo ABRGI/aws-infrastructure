@@ -12,7 +12,7 @@ import { Construct } from 'constructs';
 import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { Duration } from 'aws-cdk-lib';
-import { Certificate, ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 
 export interface NelsonCloudFrontStackProps extends cdk.StackProps {

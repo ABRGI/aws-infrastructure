@@ -171,14 +171,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         accessRightsTable.grantReadData(updateUserFn);
         accessRightsTable.grantReadData(listUsersFn);
 
-        //Step 4: Create the API gateway and methods
-        // this.userManagementServiceApiGw = new apigw.RestApi(this, 'UserManagementServiceApi', {
-        //     restApiName: `${config.get('environmentname')}UserManagementServiceAPI`,
-        //     description: 'Rest API to manage the Nelson User Management Service',
-        //     retainDeployments: false,
-        //     deploy: false,
-        //     endpointTypes: [EndpointType.REGIONAL]
-        // });
         this.userManagementServiceApiGw = new apigw.LambdaRestApi(this, 'UserManagementServiceApi', {
             handler: loginFn,
             proxy: false,
