@@ -27,12 +27,12 @@
         "cidrMask": 20
     },
     "buiinfrastructurestack": {
-        "bucketname": "bui.nelson.management",
+        "bucketname": "test-bui.nelson.management",
         "useexistingbuibucket": false,
         "publicreadaccess": true
     },
     "muiinfrastructurestack": {
-        "bucketname": "admin.nelson.management",
+        "bucketname": "test.nelson.management",
         "useexistingmuibucket": false,
         "publicreadaccess": true
     },
