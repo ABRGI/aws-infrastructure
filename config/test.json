@@ -14,9 +14,10 @@
         "loginprovideremaildomain": "nelson.management",
         "logincallbackurls": ["https://test.nelson.management/users"],
         "appname": "nelsonmanagement",
-        "revealclientsecretinoutput": true,
+        "revealclientsecretinoutput": false,
         "cognitodomainprefix": "testnelsonmanagementlogin",
-        "loginurl": ""
+        "loginurl": "",
+        "generatesecret": true
     },
     "nelsonusermanagementservicetack": {
         "usertable": "test-user-management-users",

@@ -61,13 +61,13 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         //Step 1.2: Add the client for the user pool
         this.userPoolClient = nelsonUserPool.addClient(`${config.get('nelsonloginproviderstack.appname')}`, {
             userPoolClientName: `${config.get('nelsonloginproviderstack.appname')}`,
-            generateSecret: true,
+            generateSecret: config.get('nelsonloginproviderstack.generatesecret'),
             authFlows: {
                 userPassword: true
             },
             oAuth: {
                 flows: {
-                    authorizationCodeGrant: true
+                    implicitCodeGrant: true
                 },
                 callbackUrls: config.get('nelsonloginproviderstack.logincallbackurls'),
                 scopes: [
@@ -92,12 +92,14 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         this.userPoolClient.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         //Step 1.2.1: Add the client secret to secrets manager
+
         this.userPoolClientSecret = new Secret(this, 'UserPoolClientSecret', {
             description: `Secret for ${config.get('environmentname')} env userpool ${config.get('nelsonloginproviderstack.appname')} client secret`,
             secretName: `${config.get('environmentname')}_${config.get('nelsonloginproviderstack.nelsonuserpool')}_${config.get('nelsonloginproviderstack.appname')}`,
-            secretStringValue: this.userPoolClient.userPoolClientSecret
+            secretStringValue: config.get('nelsonloginproviderstack.generatesecret') ? this.userPoolClient.userPoolClientSecret : undefined
         })
         this.userPoolClientSecret.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
 
         //Step 2: Create lambda trigger for post auth
         const preTokenGeneratorFn = new lambda.Function(this, 'PreTokenGenerator', {
@@ -136,7 +138,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         });
 
         //Display secret only if configured to display
-        if (config.get('nelsonloginproviderstack.revealclientsecretinoutput')) {
+        if (config.get('nelsonloginproviderstack.generatesecret') && config.get('nelsonloginproviderstack.revealclientsecretinoutput')) {
             new cdk.CfnOutput(this, 'NelsonUserPoolClientSecret', {
                 value: this.userPoolClient.userPoolClientSecret.unsafeUnwrap(),
                 description: 'User pool app client secret value',

@@ -83,8 +83,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 COGNITO_LOGIN_URL: props.loginUrl,
                 ENV_REGION: this.region,
-                SECRET_NAME: props.clientSecret.secretName,
-                USERPOOL_CLIENT_ID: props.clientId
+                USERPOOL_CLIENT_ID: props.clientId,
+                SECRET_NAME: props.clientSecret.secretName
             }
         });
         props.clientSecret.grantRead(loginFn);
@@ -163,10 +163,11 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 COGNITO_LOGIN_URL: props.loginUrl,
                 ENV_REGION: this.region,
-                SECRET_NAME: props.clientSecret.secretName,
-                USERPOOL_CLIENT_ID: props.clientId
+                USERPOOL_CLIENT_ID: props.clientId,
+                SECRET_NAME: props.clientSecret.secretName
             }
         });
+        props.clientSecret.grantRead(forgotUserPasswordFn);
 
         const updateUserRightsFn = new lambda.Function(this, 'CrudRightsFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
