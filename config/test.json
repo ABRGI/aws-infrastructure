@@ -26,13 +26,17 @@
         "maxazs": 2,
         "cidrMask": 20
     },
-    "bucketname": "test.nelson.management",
-    "useexistingbucket": false,
-    "nelsonsaasbucket": {
-        "buibucketname": "test.bookn.io",
+    "buiinfrastructurestack": {
+        "bucketname": "bui.nelson.management",
         "useexistingbuibucket": false,
-        "muibucketname": "test.nelson.management",
-        "useexistingmuibucket": true,
         "publicreadaccess": true
+    },
+    "muiinfrastructurestack": {
+        "bucketname": "admin.nelson.management",
+        "useexistingmuibucket": false,
+        "publicreadaccess": true
+    },
+    "tags": {
+        "nelsonenvironment": "test-saas"
     }
 }

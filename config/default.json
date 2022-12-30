@@ -32,11 +32,17 @@
         "cidrMask": 20
     },
     "defaultremovalpolicy": "snapshot",
-    "nelsonsaasbucket": {
-        "buibucketname": "test.bookn.io",
+    "buiinfrastructurestack": {
+        "bucketname": "bui.nelson.management",
         "useexistingbuibucket": false,
-        "muibucketname": "test.nelson.management",
+        "publicreadaccess": true
+    },
+    "muiinfrastructurestack": {
+        "bucketname": "admin.nelson.management",
         "useexistingmuibucket": false,
         "publicreadaccess": true
+    },
+    "tags": {
+        "nelsonenvironment": "test-saas"
     }
 }
