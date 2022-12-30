@@ -32,5 +32,18 @@
         "maxnatgateways": 1,
         "maxazs": 2,
         "cidrMask": 20
+    },
+    "buiinfrastructurestack": {
+        "bucketname": "test-bui.nelson.management",
+        "useexistingbuibucket": false,
+        "publicreadaccess": true
+    },
+    "muiinfrastructurestack": {
+        "bucketname": "test.nelson.management",
+        "useexistingmuibucket": false,
+        "publicreadaccess": true
+    },
+    "tags": {
+        "nelsonenvironment": "test-saas"
     }
 }
