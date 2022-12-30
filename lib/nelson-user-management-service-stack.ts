@@ -13,12 +13,21 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
+
+export interface UserManagementProps extends cdk.StackProps {
+    loginUrl: string,
+    userPoolName: string,
+    clientId: string,
+    clientSecret: Secret
+}
 
 export class NelsonUserManagementServiceStack extends cdk.Stack {
     userManagementServiceApiGw: cdk.aws_apigateway.RestApi;
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    constructor(scope: Construct, id: string, props: UserManagementProps) {
         super(scope, id, props);
-        const nelsonUserPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", config.get('nelsonloginproviderstack.nelsonuserpool'));
+        const nelsonUserPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", props.userPoolName);
         /*Step 1: Create the Dynamo DB tables
             * User
             * Access Roles
@@ -72,9 +81,13 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(3),
             description: 'This function helps to login the user',
             environment: {
-                COGNITO_ARN: nelsonUserPool.userPoolArn
+                COGNITO_LOGIN_URL: props.loginUrl,
+                ENV_REGION: this.region,
+                USERPOOL_CLIENT_ID: props.clientId,
+                SECRET_NAME: props.clientSecret.secretName
             }
         });
+        props.clientSecret.grantRead(loginFn);
 
         const listUsersFn = new lambda.Function(this, 'ListUsersFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
@@ -87,7 +100,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -102,7 +116,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -116,7 +131,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             description: 'This function is used to update a role with rights and access levels',
             environment: {
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -131,7 +147,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -142,8 +159,15 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
             functionName: `${config.get('environmentname')}ForgotUserPassword`,
             timeout: cdk.Duration.seconds(3),
-            description: 'This function is used to generated the required actions for user to recover password'
+            description: 'This function is used to generated the required actions for user to recover password',
+            environment: {
+                COGNITO_LOGIN_URL: props.loginUrl,
+                ENV_REGION: this.region,
+                USERPOOL_CLIENT_ID: props.clientId,
+                SECRET_NAME: props.clientSecret.secretName
+            }
         });
+        props.clientSecret.grantRead(forgotUserPasswordFn);
 
         const updateUserRightsFn = new lambda.Function(this, 'CrudRightsFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
@@ -154,7 +178,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(3),
             description: 'This function is used to add new rights to the access rights table for reference',
             environment: {
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable')
+                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
+                ENV_REGION: this.region
             }
         });
 
@@ -170,16 +195,17 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         accessRightsTable.grantReadData(updateUserFn);
         accessRightsTable.grantReadData(listUsersFn);
 
-        //Step 4: Create the API gateway and methods
-        this.userManagementServiceApiGw = new apigw.RestApi(this, 'UserManagementServiceApi', {
-            restApiName: `${config.get('environmentname')}UserManagementServiceAPI`,
-            description: 'Rest API to manage the Nelson User Management Service',
+        this.userManagementServiceApiGw = new apigw.LambdaRestApi(this, 'UserManagementServiceApi', {
+            handler: loginFn,
+            proxy: false,
+            endpointTypes: [EndpointType.REGIONAL],
             retainDeployments: false,
+            description: 'Rest API to manage the Nelson User Management Service',
+            restApiName: `${config.get('environmentname')}UserManagementServiceAPI`,
+            disableExecuteApiEndpoint: true,
             deploy: false
         });
         //Step 4.1: Add API authoriziation layer
-        const userLoginResource = this.userManagementServiceApiGw.root.addResource('userlogin');
-        userLoginResource.addMethod('POST', new apigw.LambdaIntegration(loginFn));
         const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'UserManagementServiceAuthorizer', {
             cognitoUserPools: [nelsonUserPool]
         });
@@ -187,25 +213,28 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             authorizer: auth,
             authorizationType: apigw.AuthorizationType.COGNITO
         };
-        const listUsersResource = this.userManagementServiceApiGw.root.addResource('listusers');
+        const userManagementParentResource = this.userManagementServiceApiGw.root.addResource('usermanagement');
+        const userLoginResource = userManagementParentResource.addResource('userlogin');
+        userLoginResource.addMethod('POST', new apigw.LambdaIntegration(loginFn));
+        const listUsersResource = userManagementParentResource.addResource('listusers');
         listUsersResource.addMethod('GET', new apigw.LambdaIntegration(listUsersFn), methodOptions);
-        const usersResource = this.userManagementServiceApiGw.root.addResource('user');
+        const usersResource = userManagementParentResource.addResource('user');
         usersResource.addMethod('GET', new apigw.LambdaIntegration(getUserInfoFn), methodOptions);
         usersResource.addMethod('POST', new apigw.LambdaIntegration(updateUserFn), methodOptions);
-        const rolesResource = this.userManagementServiceApiGw.root.addResource('roles');
+        const rolesResource = userManagementParentResource.addResource('roles');
         const updateRoleIntegration = new apigw.LambdaIntegration(updateRoleFn)
         rolesResource.addMethod('GET', updateRoleIntegration, methodOptions);
         rolesResource.addMethod('POST', updateRoleIntegration, methodOptions);
-        const rightResource = this.userManagementServiceApiGw.root.addResource('rights');
+        const rightResource = userManagementParentResource.addResource('rights');
         const updateRightIntegration = new apigw.LambdaIntegration(updateRoleFn)
         rightResource.addMethod('GET', updateRightIntegration, methodOptions);
         rightResource.addMethod('POST', updateRightIntegration, methodOptions);
-        const forgotPasswordResource = this.userManagementServiceApiGw.root.addResource('forgotpassword');
+        const forgotPasswordResource = userManagementParentResource.addResource('forgotpassword');
         forgotPasswordResource.addMethod('POST', new apigw.LambdaIntegration(forgotUserPasswordFn), methodOptions);
 
         const userManagementServiceDeployment = new apigw.Deployment(this, 'UserManagementServiceDeployment', {
             api: this.userManagementServiceApiGw,
-            retainDeployments: false
+            retainDeployments: true
         });
         new apigw.Stage(this, "UserManagementServiceStage", {
             deployment: userManagementServiceDeployment,

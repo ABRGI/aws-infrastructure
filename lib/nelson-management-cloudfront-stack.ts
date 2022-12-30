@@ -10,10 +10,9 @@ import * as config from 'config';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
-import { AllowedMethods, CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
-import { IRestApi } from 'aws-cdk-lib/aws-apigateway';
+import { CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { Duration } from 'aws-cdk-lib';
-import { Certificate, ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 
 export interface NelsonCloudFrontStackProps extends cdk.StackProps {
@@ -44,11 +43,10 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
                     },
                     {
                         //User management service behavior
-                        pathPattern: '/usermanagement*',
+                        pathPattern: '/usermanagement/*',
                         compress: false,
                         isDefaultBehavior: false,
-                        defaultTtl: Duration.minutes(5),
-                        allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
+                        allowedMethods: CloudFrontAllowedMethods.ALL,
                         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
                     }]
             }],
@@ -61,7 +59,7 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
         //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
         new ARecord(this, 'NelsonManagementCloudFrontARecord', {
             zone: props.hostedZone,
-            recordName: String(config.get('domain')).split(`.${config.get('hostedzonestack.hostedzone')}`)[0],
+            recordName: String(config.get('domain')).split(`.${config.get('hostedzonestack.hostedzone')}`)[0],  //Get only the subdomain value
             comment: config.get('domain'),
             ttl: Duration.minutes(5),
             target: RecordTarget.fromAlias(new CloudFrontTarget(nelsonCfDistribution))

@@ -1,5 +1,5 @@
 {
-    "environmentname": "Nelson",
+    "environmentname": "Prod",
     "domain": "admin.nelson.management",
     "hostedzonestack": {
         "hostedzone": "nelson.management",
@@ -12,11 +12,13 @@
     "nelsonloginproviderstack": {
         "nelsonuserpool": "test-nelson-users",
         "guestuserpool": "test-guest-users",
-        "dynamogettables": [
-            "user-management-access-roles",
-            "user-management-access-rights",
-            "user-management-users"
-        ]
+        "loginprovideremaildomain": "nelson.management",
+        "logincallbackurls": ["https://admin.nelson.management/users"],
+        "appname": "nelsonmanagement",
+        "revealclientsecretinoutput": false,
+        "cognitodomainprefix": "nelsonmanagementlogin",
+        "loginurl": "",
+        "generatesecret": true
     },
     "nelsonusermanagementservicetack": {
         "usertable": "user-management-users",

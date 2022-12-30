@@ -16,8 +16,13 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
+import { ClientAttributes, OAuthScope } from 'aws-cdk-lib/aws-cognito';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 export class NelsonLoginProviderStack extends cdk.Stack {
+    userPoolDomain: cdk.aws_cognito.UserPoolDomain;
+    userPoolClient: cdk.aws_cognito.UserPoolClient;
+    userPoolClientSecret: cdk.aws_secretsmanager.Secret;
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
@@ -29,10 +34,9 @@ export class NelsonLoginProviderStack extends cdk.Stack {
                 deviceOnlyRememberedOnUserPrompt: false
             },
             email: cognito.UserPoolEmail.withSES({
-                // fromEmail: `noreply@${config.get('domain')}`,
-                fromEmail: `sandeep@nelson.management`, //Change this to previous line once nelson.management is added as a domain identity in SES
+                fromEmail: `noreply@${config.get('nelsonloginproviderstack.loginprovideremaildomain')}`,
                 fromName: config.get('applicationname'),
-                // sesVerifiedDomain: config.get('domain')
+                sesVerifiedDomain: config.get('nelsonloginproviderstack.loginprovideremaildomain')
             }),
             enableSmsRole: false,
             removalPolicy: config.get('defaultremovalpolicy'),
@@ -43,8 +47,59 @@ export class NelsonLoginProviderStack extends cdk.Stack {
                 phone: false
             },
             signInCaseSensitive: false,
-            userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool'),
+            userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool')
         });
+
+        //Step 1.1: Add the domain for the user pool
+        this.userPoolDomain = nelsonUserPool.addDomain(`userpooldomain`, {
+            cognitoDomain: {
+                domainPrefix: `${config.get('nelsonloginproviderstack.cognitodomainprefix')}`
+            }
+        });
+        this.userPoolDomain.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+        //Step 1.2: Add the client for the user pool
+        this.userPoolClient = nelsonUserPool.addClient(`${config.get('nelsonloginproviderstack.appname')}`, {
+            userPoolClientName: `${config.get('nelsonloginproviderstack.appname')}`,
+            generateSecret: config.get('nelsonloginproviderstack.generatesecret'),
+            authFlows: {
+                userPassword: true
+            },
+            oAuth: {
+                flows: {
+                    implicitCodeGrant: true
+                },
+                callbackUrls: config.get('nelsonloginproviderstack.logincallbackurls'),
+                scopes: [
+                    OAuthScope.COGNITO_ADMIN,
+                    OAuthScope.EMAIL
+                ]
+            },
+            readAttributes: new ClientAttributes().withStandardAttributes({
+                email: true,
+                emailVerified: true,
+                givenName: true,
+                locale: true,
+                nickname: true
+            }),
+            writeAttributes: new ClientAttributes().withStandardAttributes({
+                email: true,
+                givenName: true,
+                locale: true,
+                nickname: true
+            })
+        });
+        this.userPoolClient.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+        //Step 1.2.1: Add the client secret to secrets manager
+
+        this.userPoolClientSecret = new Secret(this, 'UserPoolClientSecret', {
+            description: `Secret for ${config.get('environmentname')} env userpool ${config.get('nelsonloginproviderstack.appname')} client secret`,
+            secretName: `${config.get('environmentname')}_${config.get('nelsonloginproviderstack.nelsonuserpool')}_${config.get('nelsonloginproviderstack.appname')}`,
+            secretStringValue: config.get('nelsonloginproviderstack.generatesecret') ? this.userPoolClient.userPoolClientSecret : undefined
+        })
+        this.userPoolClientSecret.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
 
         //Step 2: Create lambda trigger for post auth
         const preTokenGeneratorFn = new lambda.Function(this, 'PreTokenGenerator', {
@@ -82,6 +137,15 @@ export class NelsonLoginProviderStack extends cdk.Stack {
             exportName: 'nelsonuserpooloutput'
         });
 
+        //Display secret only if configured to display
+        if (config.get('nelsonloginproviderstack.generatesecret') && config.get('nelsonloginproviderstack.revealclientsecretinoutput')) {
+            new cdk.CfnOutput(this, 'NelsonUserPoolClientSecret', {
+                value: this.userPoolClient.userPoolClientSecret.unsafeUnwrap(),
+                description: 'User pool app client secret value',
+                exportName: 'nelsonuserpoolclientsecret'
+            });
+        }
+
         //Step 6: Add tags to resources
         cdk.Aspects.of(nelsonUserPool).add(
             new cdk.Tag('nelson:client', `saas`)
@@ -100,6 +164,16 @@ export class NelsonLoginProviderStack extends cdk.Stack {
             new cdk.Tag('nelson:role', `login-provider`)
         );
         cdk.Aspects.of(preTokenGeneratorFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(this.userPoolClientSecret).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(this.userPoolClientSecret).add(
+            new cdk.Tag('nelson:role', `login-provider`)
+        );
+        cdk.Aspects.of(this.userPoolClientSecret).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
     }

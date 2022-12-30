@@ -10,7 +10,14 @@
     "existingvpcid": "",
     "nelsonloginproviderstack": {
         "nelsonuserpool": "test-nelson-users",
-        "guestuserpool": "test-guest-users"
+        "guestuserpool": "test-guest-users",
+        "loginprovideremaildomain": "nelson.management",
+        "logincallbackurls": ["https://test.nelson.management/users"],
+        "appname": "nelsonmanagement",
+        "revealclientsecretinoutput": false,
+        "cognitodomainprefix": "testnelsonmanagementlogin",
+        "loginurl": "",
+        "generatesecret": true
     },
     "nelsonusermanagementservicetack": {
         "usertable": "test-user-management-users",
