@@ -206,9 +206,14 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             deploy: false
         });
         //Step 4.1: Add API authoriziation layer
+        /*Note: Once the authorizer is created, on aws console, edit, reselect the userpool and save.
+            Looks like cdk has an issue where the userpool is not properly configured. Authorization fails if this is not done.
+        */
         const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'UserManagementServiceAuthorizer', {
+            authorizerName: props.userPoolName,
             cognitoUserPools: [nelsonUserPool]
         });
+        auth.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         const methodOptions = {
             authorizer: auth,
             authorizationType: apigw.AuthorizationType.COGNITO
