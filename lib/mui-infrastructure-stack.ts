@@ -21,7 +21,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
         });
 
         // Step 2 Create a policy statement
-        const buiPolicyStatement = new iam.PolicyStatement({
+        const muiPolicyStatement = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: [
                 's3:GetObject'
@@ -30,7 +30,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
         });
 
         // Step 3 Add the policy statement for the bucket
-        this.muiBucket.addToResourcePolicy(buiPolicyStatement);
+        this.muiBucket.addToResourcePolicy(muiPolicyStatement);
 
         //Step 4: Re-tagging for S3 bucket
         cdk.Aspects.of(this.muiBucket).add(

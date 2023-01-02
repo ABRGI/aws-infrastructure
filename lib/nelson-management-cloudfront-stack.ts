@@ -3,6 +3,7 @@
 
     Dependency:
     - Expects a hosted zone to be created in Route53 with the certificate added as CNAME record for the domain/sub-domain
+    - Expects MUI bucket to be created already as it uses the name to look for the bucket. Can be deployed through MUI stack in aws-infrastructure
     - Note: As the cloudfront api doesn't support ammending an existing distribution, we have to include all configs within this stack
 */
 
@@ -14,6 +15,7 @@ import { CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate,
 import { Duration } from 'aws-cdk-lib';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
 
 export interface NelsonCloudFrontStackProps extends cdk.StackProps {
     hostedZone: IHostedZone,
@@ -29,27 +31,41 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
         //Step 1: Create cloudfront distribution
         const nelsonCfDistribution = new CloudFrontWebDistribution(this, 'NelsonManagementCFDistribution', {
             comment: `${config.get('domain')}`,
-            originConfigs: [{
-                connectionTimeout: Duration.seconds(5),
-                customOriginSource: {
-                    domainName: `${props.apiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
-                    originPath: `/${config.get('environmentname')}`
-                },
-                behaviors: [
-                    //Default behavior
-                    {
-                        isDefaultBehavior: true,
-                        allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
+            originConfigs: [
+                //User management API
+                {
+                    connectionTimeout: Duration.seconds(5),
+                    customOriginSource: {
+                        domainName: `${props.apiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
+                        originPath: `/${config.get('environmentname')}`
                     },
-                    {
-                        //User management service behavior
-                        pathPattern: '/usermanagement/*',
-                        compress: false,
-                        isDefaultBehavior: false,
-                        allowedMethods: CloudFrontAllowedMethods.ALL,
-                        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
-                    }]
-            }],
+                    behaviors: [
+                        {
+                            //User management service behavior
+                            pathPattern: '/api/user/*',
+                            compress: false,
+                            isDefaultBehavior: false,
+                            allowedMethods: CloudFrontAllowedMethods.ALL,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                        }]
+                },
+                //S3 redirect for static website
+                {
+                    connectionTimeout: Duration.seconds(5),
+                    s3OriginSource: {
+                        s3BucketSource: Bucket.fromBucketName(this, 'MuiBucket', config.get('muiinfrastructurestack.bucketname')),
+                        originPath: '/portal'
+                    },
+                    behaviors: [
+                        //Default behavior
+                        {
+                            isDefaultBehavior: true,
+                            allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                        }
+                    ]
+                }
+            ],
             viewerCertificate: ViewerCertificate.fromAcmCertificate(certificate, {
                 aliases: [config.get('domain')]
             })

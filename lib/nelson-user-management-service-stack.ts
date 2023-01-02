@@ -220,8 +220,9 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             authorizer: auth,
             authorizationType: apigw.AuthorizationType.COGNITO
         };
-        const userManagementParentResource = this.userManagementServiceApiGw.root.addResource('usermanagement');
-        const userLoginResource = userManagementParentResource.addResource('userlogin');
+        const userManagementApiResource = this.userManagementServiceApiGw.root.addResource('api');
+        const userManagementParentResource = userManagementApiResource.addResource('user');
+        const userLoginResource = userManagementParentResource.addResource('login');
         userLoginResource.addMethod('POST', new apigw.LambdaIntegration(loginFn));
         const listUsersResource = userManagementParentResource.addResource('listusers');
         listUsersResource.addMethod('GET', new apigw.LambdaIntegration(listUsersFn), methodOptions);
