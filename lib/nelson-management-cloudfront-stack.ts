@@ -79,7 +79,7 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
             comment: config.get('domain'),
             ttl: Duration.minutes(5),
             target: RecordTarget.fromAlias(new CloudFrontTarget(nelsonCfDistribution))
-        });
+        }).applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         //Tag the cloudfront distribution
         cdk.Aspects.of(nelsonCfDistribution).add(
