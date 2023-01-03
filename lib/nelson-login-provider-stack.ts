@@ -16,7 +16,7 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
-import { ClientAttributes, OAuthScope } from 'aws-cdk-lib/aws-cognito';
+import { ClientAttributes, OAuthScope, StringAttribute } from 'aws-cdk-lib/aws-cognito';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 export class NelsonLoginProviderStack extends cdk.Stack {
@@ -47,7 +47,12 @@ export class NelsonLoginProviderStack extends cdk.Stack {
                 phone: false
             },
             signInCaseSensitive: false,
-            userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool')
+            userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool'),
+            customAttributes: {
+                'tenantids': new StringAttribute({ mutable: true }),
+                'role': new StringAttribute({ mutable: true }),
+                'rights': new StringAttribute({ mutable: true })
+            }
         });
 
         //Step 1.1: Add the domain for the user pool
@@ -81,13 +86,13 @@ export class NelsonLoginProviderStack extends cdk.Stack {
                 givenName: true,
                 locale: true,
                 nickname: true
-            }),
+            }).withCustomAttributes('custom:tenantids', 'custom:role', 'custom:rights'),
             writeAttributes: new ClientAttributes().withStandardAttributes({
                 email: true,
                 givenName: true,
                 locale: true,
                 nickname: true
-            })
+            }).withCustomAttributes('custom:tenantids', 'custom:role', 'custom:rights'),
         });
         this.userPoolClient.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
