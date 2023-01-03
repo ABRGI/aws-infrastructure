@@ -19,13 +19,13 @@
         "revealclientsecretinoutput": false,
         "cognitodomainprefix": "nelsonmanagementlogin",
         "loginurl": "",
-        "generatesecret": true,
-        "newuserpassword": "Welcome@Nelson123"
+        "generatesecret": true
     },
     "nelsonusermanagementservicetack": {
         "usertable": "user-management-users",
         "accessrolestable": "user-management-access-roles",
-        "accessrightstable": "user-management-access-rights"
+        "accessrightstable": "user-management-access-rights",
+        "newuserpassword": "Welcome@Nelson123"
     },
     "useexistingvpc": false,
     "existingvpcname": "",
