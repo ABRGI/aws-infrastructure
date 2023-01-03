@@ -19,6 +19,7 @@ import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 export interface UserManagementProps extends cdk.StackProps {
     loginUrl: string,
     userPoolName: string,
+    userPoolId: string,
     clientId: string,
     clientSecret: Secret
 }
@@ -117,7 +118,9 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
                 ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
-                ENV_REGION: this.region
+                ENV_REGION: this.region,
+                USERPOOL_ID: props.userPoolId,
+                TEMP_PASSWORD: config.get('nelsonusermanagementservicetack.newuserpassword')
             }
         });
 
@@ -148,7 +151,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
                 ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
-                ENV_REGION: this.region
+                ENV_REGION: this.region,
+                USERPOOL_ID: props.userPoolId
             }
         });
 
@@ -164,7 +168,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
                 COGNITO_LOGIN_URL: props.loginUrl,
                 ENV_REGION: this.region,
                 USERPOOL_CLIENT_ID: props.clientId,
-                SECRET_NAME: props.clientSecret.secretName
+                SECRET_NAME: props.clientSecret.secretName,
+                USERPOOL_ID: props.userPoolId
             }
         });
         props.clientSecret.grantRead(forgotUserPasswordFn);
@@ -202,7 +207,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             retainDeployments: false,
             description: 'Rest API to manage the Nelson User Management Service',
             restApiName: `${config.get('environmentname')}UserManagementServiceAPI`,
-            disableExecuteApiEndpoint: true,
+            disableExecuteApiEndpoint: false,
             deploy: false
         });
         //Step 4.1: Add API authoriziation layer

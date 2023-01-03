@@ -11,6 +11,7 @@
     "applicationname": "Nelson Management",
     "nelsonloginproviderstack": {
         "nelsonuserpool": "test-nelson-users",
+        "nelsonuserpoolid": "",
         "guestuserpool": "test-guest-users",
         "loginprovideremaildomain": "nelson.management",
         "logincallbackurls": ["https://admin.nelson.management/users"],
@@ -18,7 +19,8 @@
         "revealclientsecretinoutput": false,
         "cognitodomainprefix": "nelsonmanagementlogin",
         "loginurl": "",
-        "generatesecret": true
+        "generatesecret": true,
+        "newuserpassword": "Welcome@Nelson123"
     },
     "nelsonusermanagementservicetack": {
         "usertable": "user-management-users",

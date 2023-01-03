@@ -16,18 +16,19 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
-import { ClientAttributes, OAuthScope, StringAttribute } from 'aws-cdk-lib/aws-cognito';
+import { ClientAttributes, OAuthScope } from 'aws-cdk-lib/aws-cognito';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 export class NelsonLoginProviderStack extends cdk.Stack {
     userPoolDomain: cdk.aws_cognito.UserPoolDomain;
     userPoolClient: cdk.aws_cognito.UserPoolClient;
     userPoolClientSecret: cdk.aws_secretsmanager.Secret;
+    nelsonUserPool: cdk.aws_cognito.UserPool;
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
         //Step 1: Create the user pool
-        const nelsonUserPool = new cognito.UserPool(this, 'NelsonUserPool', {
+        this.nelsonUserPool = new cognito.UserPool(this, 'NelsonUserPool', {
             accountRecovery: cognito.AccountRecovery.NONE,
             deviceTracking: {
                 challengeRequiredOnNewDevice: false,
@@ -47,16 +48,11 @@ export class NelsonLoginProviderStack extends cdk.Stack {
                 phone: false
             },
             signInCaseSensitive: false,
-            userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool'),
-            customAttributes: {
-                'tenantids': new StringAttribute({ mutable: true }),
-                'role': new StringAttribute({ mutable: true }),
-                'rights': new StringAttribute({ mutable: true })
-            }
+            userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool')
         });
 
         //Step 1.1: Add the domain for the user pool
-        this.userPoolDomain = nelsonUserPool.addDomain(`userpooldomain`, {
+        this.userPoolDomain = this.nelsonUserPool.addDomain(`userpooldomain`, {
             cognitoDomain: {
                 domainPrefix: `${config.get('nelsonloginproviderstack.cognitodomainprefix')}`
             }
@@ -64,7 +60,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         this.userPoolDomain.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         //Step 1.2: Add the client for the user pool
-        this.userPoolClient = nelsonUserPool.addClient(`${config.get('nelsonloginproviderstack.appname')}`, {
+        this.userPoolClient = this.nelsonUserPool.addClient(`${config.get('nelsonloginproviderstack.appname')}`, {
             userPoolClientName: `${config.get('nelsonloginproviderstack.appname')}`,
             generateSecret: config.get('nelsonloginproviderstack.generatesecret'),
             authFlows: {
@@ -86,13 +82,13 @@ export class NelsonLoginProviderStack extends cdk.Stack {
                 givenName: true,
                 locale: true,
                 nickname: true
-            }).withCustomAttributes('custom:tenantids', 'custom:role', 'custom:rights'),
+            }),
             writeAttributes: new ClientAttributes().withStandardAttributes({
                 email: true,
                 givenName: true,
                 locale: true,
                 nickname: true
-            }).withCustomAttributes('custom:tenantids', 'custom:role', 'custom:rights'),
+            })
         });
         this.userPoolClient.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
@@ -118,7 +114,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         });
 
         //Step 3: Add trigger to userpool
-        nelsonUserPool.addTrigger(cognito.UserPoolOperation.PRE_TOKEN_GENERATION, preTokenGeneratorFn);
+        this.nelsonUserPool.addTrigger(cognito.UserPoolOperation.PRE_TOKEN_GENERATION, preTokenGeneratorFn);
 
         //Step 4: Add permissions to the pretokengenerator function to access the correct Dynamo DB tables
         const userTable = dynamodb.Table.fromTableName(this, 'usertable', config.get('nelsonusermanagementservicetack.usertable'));
@@ -137,9 +133,15 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         });
 
         new cdk.CfnOutput(this, 'NelsonUserPoolOutput', {
-            value: nelsonUserPool.userPoolArn,
+            value: this.nelsonUserPool.userPoolArn,
             description: 'Nelson user pool ARN',
             exportName: 'nelsonuserpooloutput'
+        });
+
+        new cdk.CfnOutput(this, 'NelsonUserPoolIdOutput', {
+            value: this.nelsonUserPool.userPoolId,
+            description: 'Nelson user pool ID',
+            exportName: 'nelsonuserpoolidoutput'
         });
 
         //Display secret only if configured to display
@@ -152,13 +154,13 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         }
 
         //Step 6: Add tags to resources
-        cdk.Aspects.of(nelsonUserPool).add(
+        cdk.Aspects.of(this.nelsonUserPool).add(
             new cdk.Tag('nelson:client', `saas`)
         );
-        cdk.Aspects.of(nelsonUserPool).add(
+        cdk.Aspects.of(this.nelsonUserPool).add(
             new cdk.Tag('nelson:role', `login-provider`)
         );
-        cdk.Aspects.of(nelsonUserPool).add(
+        cdk.Aspects.of(this.nelsonUserPool).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 

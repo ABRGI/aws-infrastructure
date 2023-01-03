@@ -10,6 +10,7 @@
     "existingvpcid": "",
     "nelsonloginproviderstack": {
         "nelsonuserpool": "test-nelson-users",
+        "nelsonuserpoolid": "",
         "guestuserpool": "test-guest-users",
         "loginprovideremaildomain": "nelson.management",
         "logincallbackurls": ["https://test.nelson.management/users"],
@@ -17,7 +18,8 @@
         "revealclientsecretinoutput": false,
         "cognitodomainprefix": "testnelsonmanagementlogin",
         "loginurl": "",
-        "generatesecret": true
+        "generatesecret": true,
+        "newuserpassword": "Welcome@Nelson123"
     },
     "nelsonusermanagementservicetack": {
         "usertable": "test-user-management-users",
