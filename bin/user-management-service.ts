@@ -17,6 +17,7 @@ import { NelsonUserManagementServiceStack } from '../lib/nelson-user-management-
 import * as config from 'config';
 import { NelsonManagementHostedZoneStack } from '../lib/nelson-management-hosted-zone-stack';
 import { NelsonManagementCloudFrontStack } from '../lib/nelson-management-cloudfront-stack';
+import { MuiInfrastructureStack } from '../lib/mui-infrastructure-stack';
 
 const app = new cdk.App();
 const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('environmentname')}HostedZoneStack`, {
@@ -42,6 +43,12 @@ const userManagementServiceStack = new NelsonUserManagementServiceStack(app, `${
     clientId: loginProviderStack.userPoolClient.userPoolClientId,
     clientSecret: loginProviderStack.userPoolClientSecret
 });
+const muiInfrastructureStack = new MuiInfrastructureStack(app, `${config.get('environmentname')}MuiInfrastructure`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    }
+});
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
@@ -51,5 +58,6 @@ new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}Nelson
     viewerAcmCertificateArn: hostedZoneStack.domainCertificate.certificateArn,
     apiGatewayRestApiId: userManagementServiceStack.userManagementServiceApiGw.restApiId.toString(),
     apiGatewayRegion: userManagementServiceStack.region.toString(),
-    crossRegionReferences: true
+    crossRegionReferences: true,
+    muiBucket: muiInfrastructureStack.muiBucket
 });

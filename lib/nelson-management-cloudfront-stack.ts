@@ -15,13 +15,14 @@ import { CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate,
 import { Duration } from 'aws-cdk-lib';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
-import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3';
 
 export interface NelsonCloudFrontStackProps extends cdk.StackProps {
     hostedZone: IHostedZone,
     viewerAcmCertificateArn: string,
     apiGatewayRestApiId: string,
-    apiGatewayRegion: string
+    apiGatewayRegion: string,
+    muiBucket?: IBucket
 }
 
 export class NelsonManagementCloudFrontStack extends cdk.Stack {
@@ -53,7 +54,7 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
                 {
                     connectionTimeout: Duration.seconds(5),
                     s3OriginSource: {
-                        s3BucketSource: Bucket.fromBucketName(this, 'MuiBucket', config.get('muiinfrastructurestack.bucketname')),
+                        s3BucketSource: props.muiBucket ?? Bucket.fromBucketName(this, 'MuiBucket', config.get('muiinfrastructurestack.bucketname')),
                         originPath: '/portal'
                     },
                     behaviors: [

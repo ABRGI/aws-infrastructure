@@ -21,5 +21,10 @@ else {
 }
 new SaasInfrastructureStack(app, `${config.get('environmentname')}SaasInfrastructure`, vpcprops);
 
-new MuiInfrastructureStack(app, `${config.get('environmentname')}MuiInfrastructure`);
+new MuiInfrastructureStack(app, `${config.get('environmentname')}MuiInfrastructure`, {
+  env: {
+    account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+  }
+});
 //TODO: Continue to implement the remainder of the infrastructure including BUI, MUI, etc...
