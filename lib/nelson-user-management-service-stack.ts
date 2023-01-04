@@ -15,6 +15,7 @@ import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 export interface UserManagementProps extends cdk.StackProps {
     loginUrl: string,
@@ -123,6 +124,13 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
                 TEMP_PASSWORD: config.get('nelsonusermanagementservicetack.newuserpassword')
             }
         });
+        //Policy can't be created using userpool.grant as it doesn't add the correct user pool id. Same with just ading resource as userpool.userpoolarn.
+        //Custom built property to make sure the id is built properly
+        updateUserFn.addToRolePolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ['cognito-idp:AdminCreateUser', 'cognito-idp:AdminGetUser', 'cognito-idp:ListUsers'],
+            resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${props.userPoolId}`]
+        }));
 
         const updateRoleFn = new lambda.Function(this, 'CrudRolesFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
