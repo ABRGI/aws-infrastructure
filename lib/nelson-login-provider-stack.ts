@@ -110,7 +110,10 @@ export class NelsonLoginProviderStack extends cdk.Stack {
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return event }'),    //Basic code
             functionName: `${config.get('environmentname')}NelsonAuthPreTokenGenerator`,
             timeout: cdk.Duration.seconds(3),
-            description: 'This function is used to inject user roles, rights and tenant info to the jwt token'
+            description: 'This function is used to inject user roles, rights and tenant info to the jwt token',
+            environment: {
+                USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
+            }
         });
 
         //Step 3: Add trigger to userpool
