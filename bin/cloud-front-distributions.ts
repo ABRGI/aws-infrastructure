@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 /*
-    App script creates the user management service for Nelson. This includes the different stacks required to create
+    App script creates the user and tenant management service for Nelson. This includes the different stacks required to create
     - Cognito user pool
     - User management service functions and api gateway
-    - Dynamo DB tables
+    - Dynamo DB user tables
     - Cloudfront distribution
     - Route53 Hosted Zone and record
+    - Dynamo DB tenant tables
+    - Tenant management service functions and api gateway
 
     Dependencies:
     Script needs to be run for a common AWS account.
@@ -18,6 +20,7 @@ import * as config from 'config';
 import { NelsonManagementHostedZoneStack } from '../lib/nelson-management-hosted-zone-stack';
 import { NelsonManagementCloudFrontStack } from '../lib/nelson-management-cloudfront-stack';
 import { MuiInfrastructureStack } from '../lib/mui-infrastructure-stack';
+import { NelsonTenantManagementServiceStack } from '../lib/nelson-tenant-management-stack';
 
 const app = new cdk.App();
 const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('environmentname')}HostedZoneStack`, {
@@ -49,6 +52,14 @@ const muiInfrastructureStack = new MuiInfrastructureStack(app, `${config.get('en
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
     }
 });
+const tenantManagementServiceStack = new NelsonTenantManagementServiceStack(app, `${config.get('environmentname')}TenantManagementService`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    },
+    userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool'),
+    userPoolId: config.get('nelsonloginproviderstack.nelsonuserpoolid') != '' ? config.get('nelsonloginproviderstack.nelsonuserpoolid') : loginProviderStack.nelsonUserPool.userPoolId
+})
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
@@ -56,7 +67,8 @@ new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}Nelson
     },
     hostedZone: hostedZoneStack.hostedZone,
     viewerAcmCertificateArn: hostedZoneStack.domainCertificate.certificateArn,
-    apiGatewayRestApiId: userManagementServiceStack.userManagementServiceApiGw.restApiId.toString(),
+    userManagementApiGatewayRestApiId: userManagementServiceStack.userManagementServiceApiGw.restApiId.toString(),
+    tenantManagementApiGatewayRestApiID: tenantManagementServiceStack.tenantManagementServiceApiGw.restApiId.toString(),
     apiGatewayRegion: userManagementServiceStack.region.toString(),
     crossRegionReferences: true,
     muiBucket: muiInfrastructureStack.muiBucket

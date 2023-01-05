@@ -20,7 +20,8 @@ import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3';
 export interface NelsonCloudFrontStackProps extends cdk.StackProps {
     hostedZone: IHostedZone,
     viewerAcmCertificateArn: string,
-    apiGatewayRestApiId: string,
+    userManagementApiGatewayRestApiId: string,
+    tenantManagementApiGatewayRestApiID: string,
     apiGatewayRegion: string,
     muiBucket?: IBucket
 }
@@ -37,7 +38,7 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
                 {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
-                        domainName: `${props.apiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
+                        domainName: `${props.userManagementApiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
                         originPath: `/${config.get('environmentname')}`
                     },
                     behaviors: [
@@ -73,7 +74,32 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
                             viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
                         }
                     ]
-                }
+                },
+                //Tenant management API
+                {
+                    connectionTimeout: Duration.seconds(5),
+                    customOriginSource: {
+                        domainName: `${props.tenantManagementApiGatewayRestApiID}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
+                        originPath: `/${config.get('environmentname')}`
+                    },
+                    behaviors: [
+                        {
+                            //User management service behavior
+                            pathPattern: '/api/tenant/*',
+                            compress: false,
+                            isDefaultBehavior: false,
+                            allowedMethods: CloudFrontAllowedMethods.ALL,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                            forwardedValues: {
+                                headers: ['Authorization'],
+                                queryString: true,
+                            },
+                            cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                            minTtl: Duration.seconds(0),
+                            maxTtl: Duration.seconds(0),
+                            defaultTtl: Duration.seconds(0)
+                        }]
+                },
             ],
             viewerCertificate: ViewerCertificate.fromAcmCertificate(certificate, {
                 aliases: [config.get('domain')]

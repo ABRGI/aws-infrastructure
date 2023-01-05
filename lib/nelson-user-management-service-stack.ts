@@ -3,7 +3,7 @@
     Architecture and data model reference: https://projectnelson.atlassian.net/wiki/spaces/NELS/pages/2211217409/User+Management
 
     Resource Dependencies:
-    - User Management Service (Code for lambda functions) - <insert git link>
+    - User Management Service (Code for lambda functions) - https://github.com/ABRGI/nelson-user-management-service
 */
 
 import * as config from 'config';
@@ -35,7 +35,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             * Access Roles
             * Access Rights
         */
-        const userTable = new dynamodb.Table(this, 'usertable', {
+        const userTable = new dynamodb.Table(this, 'UserTable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: config.get('nelsonusermanagementservicetack.usertable'),
@@ -45,7 +45,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             writeCapacity: 2
         });
 
-        const accessRolesTable = new dynamodb.Table(this, 'accessrolestable', {
+        const accessRolesTable = new dynamodb.Table(this, 'AccessRolesTable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: config.get('nelsonusermanagementservicetack.accessrolestable'),
@@ -55,7 +55,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             writeCapacity: 2
         });
 
-        const accessRightsTable = new dynamodb.Table(this, 'accessrightstable', {
+        const accessRightsTable = new dynamodb.Table(this, 'AccessRightsTable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: config.get('nelsonusermanagementservicetack.accessrightstable'),
@@ -86,7 +86,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
                 COGNITO_LOGIN_URL: props.loginUrl,
                 ENV_REGION: this.region,
                 USERPOOL_CLIENT_ID: props.clientId,
-                SECRET_NAME: props.clientSecret.secretName
+                SECRET_NAME: props.clientSecret.secretName,
+                USER_TABLE: config.get('nelsonusermanagementservicetack.usertable')
             }
         });
         props.clientSecret.grantRead(loginFn);
@@ -141,7 +142,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         //Custom built property to make sure the id is built properly
         updateUserFn.addToRolePolicy(new PolicyStatement({
             effect: Effect.ALLOW,
-            actions: ['cognito-idp:AdminCreateUser', 'cognito-idp:AdminGetUser', 'cognito-idp:ListUsers'],
+            actions: ['cognito-idp:AdminCreateUser', 'cognito-idp:AdminGetUser', 'cognito-idp:ListUsers', 'cognito-idp:AdminUpdateUserAttributes', 'cognito-idp:AdminDisableUser', 'cognito-idp:AdminEnableUser'],
             resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${props.userPoolId}`]
         }));
         updateUserFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
@@ -184,6 +185,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         userTable.grantReadWriteData(updateUserFn);
         userTable.grantReadData(listUsersFn);
         userTable.grantReadData(getUserInfoFn);
+        userTable.grantReadWriteData(loginFn);
         accessRolesTable.grantReadWriteData(updateRoleFn);
         accessRolesTable.grantReadData(listUsersFn);
         accessRolesTable.grantReadData(updateUserFn);

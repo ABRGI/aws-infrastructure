@@ -47,5 +47,8 @@
     },
     "tags": {
         "nelsonenvironment": "test-saas"
+    },
+    "nelsontenantmanagementservicetack": {
+        "tenanttable": "test-nelson-tenants"
     }
 }

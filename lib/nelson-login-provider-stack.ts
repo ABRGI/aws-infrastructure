@@ -81,13 +81,15 @@ export class NelsonLoginProviderStack extends cdk.Stack {
                 emailVerified: true,
                 givenName: true,
                 locale: true,
-                nickname: true
+                nickname: true,
+                fullname: true
             }),
             writeAttributes: new ClientAttributes().withStandardAttributes({
                 email: true,
                 givenName: true,
                 locale: true,
-                nickname: true
+                nickname: true,
+                fullname: true
             })
         });
         this.userPoolClient.applyRemovalPolicy(config.get('defaultremovalpolicy'));
