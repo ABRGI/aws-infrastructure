@@ -11,7 +11,7 @@ import * as config from 'config';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
-import { CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { Duration } from 'aws-cdk-lib';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
@@ -47,7 +47,15 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
                             compress: false,
                             isDefaultBehavior: false,
                             allowedMethods: CloudFrontAllowedMethods.ALL,
-                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                            forwardedValues: {
+                                headers: ['Authorization'],
+                                queryString: true,
+                            },
+                            cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                            minTtl: Duration.seconds(0),
+                            maxTtl: Duration.seconds(0),
+                            defaultTtl: Duration.seconds(0)
                         }]
                 },
                 //S3 redirect for static website
