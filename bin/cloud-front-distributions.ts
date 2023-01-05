@@ -56,9 +56,7 @@ const tenantManagementServiceStack = new NelsonTenantManagementServiceStack(app,
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-    },
-    userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool'),
-    userPoolId: config.get('nelsonloginproviderstack.nelsonuserpoolid') != '' ? config.get('nelsonloginproviderstack.nelsonuserpoolid') : loginProviderStack.nelsonUserPool.userPoolId
+    }
 })
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {

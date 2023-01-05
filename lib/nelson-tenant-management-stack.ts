@@ -13,16 +13,10 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
-
-export interface TenantManagementProps extends cdk.StackProps {
-    userPoolName: string,
-    userPoolId: string,
-}
 
 export class NelsonTenantManagementServiceStack extends cdk.Stack {
     tenantManagementServiceApiGw: cdk.aws_apigateway.RestApi;
-    constructor(scope: Construct, id: string, props: TenantManagementProps) {
+    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
         //Create the tenant table
         const tenantTable = new dynamodb.Table(this, 'TenantTable', {
@@ -64,27 +58,10 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         });
         this.tenantManagementServiceApiGw.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-        //Add API authoriziation layer
-        /*Note: Once the authorizer is created, on aws console, edit, reselect the userpool and save.
-            Looks like cdk has an issue where the userpool is not properly configured. Authorization fails if this is not done.
-            For all the resources using this auth, remove and add again from the console.
-            Alternate: Remove method options from the script below and deploy. Then add back and redeploy after updating the auth on console.
-        */
-        const nelsonUserPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", props.userPoolName);
-        const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'TenantManagementServiceAuthorizer', {
-            authorizerName: props.userPoolName,
-            cognitoUserPools: [nelsonUserPool]
-        });
-        auth.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-        const methodOptions = {
-            authorizer: auth,
-            authorizationType: apigw.AuthorizationType.COGNITO
-        };
-
         const tenantManagementApiResource = this.tenantManagementServiceApiGw.root.addResource('api');
         const tenantManagementParentResource = tenantManagementApiResource.addResource('tenant');
         const listTenantsResource = tenantManagementParentResource.addResource('listtenants');
-        listTenantsResource.addMethod('GET', new apigw.LambdaIntegration(listTenantFn), methodOptions);
+        listTenantsResource.addMethod('GET', new apigw.LambdaIntegration(listTenantFn));
 
         const tenantManagementServiceDeployment = new apigw.Deployment(this, 'TenantManagementServiceDeployment', {
             api: this.tenantManagementServiceApiGw,

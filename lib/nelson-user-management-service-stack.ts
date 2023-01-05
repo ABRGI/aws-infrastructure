@@ -147,6 +147,30 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         }));
         updateUserFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
+        const confirmUserFn = new lambda.Function(this, 'ConfirmUserFunction', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            architecture: lambda.Architecture.ARM_64,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: `${config.get('environmentname')}UpdateUser`,
+            timeout: cdk.Duration.seconds(3),
+            description: 'This function is used to update a user property in nelson',
+            environment: {
+                COGNITO_LOGIN_URL: props.loginUrl,
+                ENV_REGION: this.region,
+                USERPOOL_CLIENT_ID: props.clientId,
+                SECRET_NAME: props.clientSecret.secretName,
+                USER_TABLE: config.get('nelsonusermanagementservicetack.usertable')
+            }
+        });
+        props.clientSecret.grantRead(loginFn);
+        confirmUserFn.addToRolePolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ['cognito-idp:RespondToAuthChallenge'],
+            resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${props.userPoolId}`]
+        }));
+        confirmUserFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
         const updateRoleFn = new lambda.Function(this, 'CrudRolesFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
@@ -186,6 +210,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         userTable.grantReadData(listUsersFn);
         userTable.grantReadData(getUserInfoFn);
         userTable.grantReadWriteData(loginFn);
+        userTable.grantReadWriteData(confirmUserFn);
         accessRolesTable.grantReadWriteData(updateRoleFn);
         accessRolesTable.grantReadData(listUsersFn);
         accessRolesTable.grantReadData(updateUserFn);
@@ -224,6 +249,8 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         userLoginResource.addMethod('POST', new apigw.LambdaIntegration(loginFn));
         const userLogoutResource = userManagementParentResource.addResource('logout');
         userLogoutResource.addMethod('POST', new apigw.LambdaIntegration(logoutFn));
+        const confirmUserResource = userManagementParentResource.addResource('confirmuser');
+        confirmUserResource.addMethod('POST', new apigw.LambdaIntegration(confirmUserFn));
         const listUsersResource = userManagementParentResource.addResource('listusers');
         listUsersResource.addMethod('GET', new apigw.LambdaIntegration(listUsersFn), methodOptions);
         const usersResource = userManagementParentResource.addResource('user');
@@ -310,6 +337,16 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             new cdk.Tag('nelson:role', `user-management-service`)
         );
         cdk.Aspects.of(logoutFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(confirmUserFn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(confirmUserFn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(confirmUserFn).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
