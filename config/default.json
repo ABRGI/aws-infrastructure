@@ -10,20 +10,19 @@
     "landingpage": "#/users",
     "applicationname": "Nelson Management",
     "nelsonloginproviderstack": {
-        "nelsonuserpool": "test-nelson-users",
+        "nelsonuserpool": "nelson-users",
         "nelsonuserpoolid": "",
-        "guestuserpool": "test-guest-users",
+        "guestuserpool": "nelson-guest-users",
         "loginprovideremaildomain": "nelson.management",
-        "logincallbackurls": ["https://admin.nelson.management/users"],
+        "logincallbackurls": ["https://admin.nelson.management"],
         "appname": "nelsonmanagement",
         "cognitodomainprefix": "nelsonmanagementlogin",
         "loginurl": "",
         "generatesecret": true
     },
     "nelsonusermanagementservicetack": {
-        "usertable": "user-management-users",
+        "usertable": "nelson-user-management-users",
         "accessrolestable": "user-management-access-roles",
-        "accessrightstable": "user-management-access-rights",
         "newuserpassword": "Welcome@Nelson123"
     },
     "useexistingvpc": false,
@@ -34,7 +33,7 @@
         "maxazs": 2,
         "cidrMask": 20
     },
-    "defaultremovalpolicy": "snapshot",
+    "defaultremovalpolicy": "destroy",
     "buiinfrastructurestack": {
         "bucketname": "bui.nelson.management",
         "useexistingbuibucket": false,

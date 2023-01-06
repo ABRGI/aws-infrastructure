@@ -36,7 +36,7 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
             functionName: `${config.get('environmentname')}ListTenantsFunction`,
             timeout: cdk.Duration.seconds(3),
-            description: 'This function helps to login the user',
+            description: 'This function lists the tenants for nelson based on search criteria',
             environment: {
                 TENANT_TABLE: config.get('nelsontenantmanagementservicetack.tenanttable'),
                 ENV_REGION: this.region,

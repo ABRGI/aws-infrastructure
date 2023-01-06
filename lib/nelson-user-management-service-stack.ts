@@ -104,7 +104,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
                 ENV_REGION: this.region
             }
         });
@@ -121,7 +120,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
                 ENV_REGION: this.region,
                 USERPOOL_ID: props.userPoolId,
                 TEMP_PASSWORD: config.get('nelsonusermanagementservicetack.newuserpassword')
@@ -141,9 +139,9 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
-            functionName: `${config.get('environmentname')}UpdateUser`,
+            functionName: `${config.get('environmentname')}ConfirmUser`,
             timeout: cdk.Duration.seconds(3),
-            description: 'This function is used to update a user property in nelson',
+            description: 'This function is used to confirm a new user in nelson',
             environment: {
                 COGNITO_LOGIN_URL: props.loginUrl,
                 ENV_REGION: this.region,
@@ -170,7 +168,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             description: 'This function is used to update a role with rights and access levels',
             environment: {
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
                 ENV_REGION: this.region
             }
         });
@@ -187,7 +184,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
                 ENV_REGION: this.region,
                 USERPOOL_ID: props.userPoolId
             }

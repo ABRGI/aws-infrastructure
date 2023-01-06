@@ -98,7 +98,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
 
         this.userPoolClientSecret = new Secret(this, 'UserPoolClientSecret', {
             description: `Secret for ${config.get('environmentname')} env userpool ${config.get('nelsonloginproviderstack.appname')} client secret`,
-            secretName: `${config.get('environmentname')}_${config.get('nelsonloginproviderstack.nelsonuserpool')}_${config.get('nelsonloginproviderstack.appname')}`,
+            secretName: `${config.get('environmentname')}_${config.get('nelsonloginproviderstack.nelsonuserpool')}_${config.get('nelsonloginproviderstack.appname')}_secret`,
             secretStringValue: config.get('nelsonloginproviderstack.generatesecret') ? this.userPoolClient.userPoolClientSecret : undefined
         })
         this.userPoolClientSecret.applyRemovalPolicy(config.get('defaultremovalpolicy'));
@@ -124,11 +124,9 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         //Step 4: Add permissions to the pretokengenerator function to access the correct Dynamo DB tables
         const userTable = dynamodb.Table.fromTableName(this, 'usertable', config.get('nelsonusermanagementservicetack.usertable'));
         const accessRolesTable = dynamodb.Table.fromTableName(this, 'accessrolestable', config.get('nelsonusermanagementservicetack.accessrolestable'));
-        const accessRightsTable = dynamodb.Table.fromTableName(this, 'accessrightstable', config.get('nelsonusermanagementservicetack.accessrightstable'));
 
         userTable.grantReadData(preTokenGeneratorFn);
         accessRolesTable.grantReadData(preTokenGeneratorFn);
-        accessRightsTable.grantReadData(preTokenGeneratorFn);
 
         //Step 6: Add tags to resources
         cdk.Aspects.of(this.nelsonUserPool).add(
