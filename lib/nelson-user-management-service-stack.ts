@@ -150,7 +150,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable')
             }
         });
-        props.clientSecret.grantRead(loginFn);
+        props.clientSecret.grantRead(confirmUserFn);
         confirmUserFn.addToRolePolicy(new PolicyStatement({
             effect: Effect.ALLOW,
             actions: ['cognito-idp:RespondToAuthChallenge'],
