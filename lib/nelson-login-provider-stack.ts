@@ -130,34 +130,6 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         accessRolesTable.grantReadData(preTokenGeneratorFn);
         accessRightsTable.grantReadData(preTokenGeneratorFn);
 
-        //Step 5: Add Cfn outputs as required
-        new cdk.CfnOutput(this, 'PreTokenGeneratorOutput', {
-            value: preTokenGeneratorFn.functionArn,
-            description: 'Pre-token generator function ARN',
-            exportName: 'pretokengeneratorfnoutput'
-        });
-
-        new cdk.CfnOutput(this, 'NelsonUserPoolOutput', {
-            value: this.nelsonUserPool.userPoolArn,
-            description: 'Nelson user pool ARN',
-            exportName: 'nelsonuserpooloutput'
-        });
-
-        new cdk.CfnOutput(this, 'NelsonUserPoolIdOutput', {
-            value: this.nelsonUserPool.userPoolId,
-            description: 'Nelson user pool ID',
-            exportName: 'nelsonuserpoolidoutput'
-        });
-
-        //Display secret only if configured to display
-        if (config.get('nelsonloginproviderstack.generatesecret') && config.get('nelsonloginproviderstack.revealclientsecretinoutput')) {
-            new cdk.CfnOutput(this, 'NelsonUserPoolClientSecret', {
-                value: this.userPoolClient.userPoolClientSecret.unsafeUnwrap(),
-                description: 'User pool app client secret value',
-                exportName: 'nelsonuserpoolclientsecret'
-            });
-        }
-
         //Step 6: Add tags to resources
         cdk.Aspects.of(this.nelsonUserPool).add(
             new cdk.Tag('nelson:client', `saas`)

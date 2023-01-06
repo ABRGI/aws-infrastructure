@@ -33,7 +33,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         /*Step 1: Create the Dynamo DB tables
             * User
             * Access Roles
-            * Access Rights
         */
         const userTable = new dynamodb.Table(this, 'UserTable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
@@ -49,16 +48,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: config.get('nelsonusermanagementservicetack.accessrolestable'),
-            removalPolicy: config.get('defaultremovalpolicy'),
-            billingMode: dynamodb.BillingMode.PROVISIONED,
-            readCapacity: 2,        //TODO: Find the correct values for read and write capacities
-            writeCapacity: 2
-        });
-
-        const accessRightsTable = new dynamodb.Table(this, 'AccessRightsTable', {
-            partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-            tableClass: dynamodb.TableClass.STANDARD,
-            tableName: config.get('nelsonusermanagementservicetack.accessrightstable'),
             removalPolicy: config.get('defaultremovalpolicy'),
             billingMode: dynamodb.BillingMode.PROVISIONED,
             readCapacity: 2,        //TODO: Find the correct values for read and write capacities
@@ -214,9 +203,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         accessRolesTable.grantReadWriteData(updateRoleFn);
         accessRolesTable.grantReadData(listUsersFn);
         accessRolesTable.grantReadData(updateUserFn);
-        accessRightsTable.grantReadData(updateRoleFn);
-        accessRightsTable.grantReadData(updateUserFn);
-        accessRightsTable.grantReadData(listUsersFn);
 
         this.userManagementServiceApiGw = new apigw.LambdaRestApi(this, 'UserManagementServiceApi', {
             handler: loginFn,
@@ -270,25 +256,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             stageName: config.get('environmentname')
         });
 
-        //Step 5: Define Cfn outputs
-        new cdk.CfnOutput(this, 'UserTableOutput', {
-            value: userTable.tableArn,
-            description: "Arn of the user table",
-            exportName: 'usertableoutput'
-        });
-
-        new cdk.CfnOutput(this, 'AccessRolesTableOutput', {
-            value: accessRolesTable.tableArn,
-            description: "Arn of the accessroles table",
-            exportName: 'accessrolestableoutput'
-        });
-
-        new cdk.CfnOutput(this, 'AccessRightsTableOutput', {
-            value: accessRightsTable.tableArn,
-            description: "Arn of the accessrights table",
-            exportName: 'accessrightstableoutput'
-        });
-
         //Step 6: Tag resources
         cdk.Aspects.of(userTable).add(
             new cdk.Tag('nelson:client', `saas`)
@@ -307,16 +274,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             new cdk.Tag('nelson:role', `user-management-service`)
         );
         cdk.Aspects.of(accessRolesTable).add(
-            new cdk.Tag('nelson:environment', config.get('environmentname'))
-        );
-
-        cdk.Aspects.of(accessRightsTable).add(
-            new cdk.Tag('nelson:client', `saas`)
-        );
-        cdk.Aspects.of(accessRightsTable).add(
-            new cdk.Tag('nelson:role', `user-management-service`)
-        );
-        cdk.Aspects.of(accessRightsTable).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
