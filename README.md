@@ -46,3 +46,9 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 - Remember to bootstrap the environment using `cdk bootstrap` command. Follow [Bootstraping with CDK](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) for more information
 - If running code on Windows, update package.json scripts to use environment variables in format `%variablename%` instead of `$variablename`. Set environment variables using the SET {variable}={value} command
 - Remember to check the type of terminal when running the code from VS Code. If windows, modify execution scripts based on powershell or cmd terminal type
+
+- **aws-rds-snapshot-export-pipeline-cdk** by using following commands with `NODE_ENV=development`:
+    - `cdk diff RdsSnapshotExportToS3Pipeline --app "npx ts-node --prefer-ts-exts bin/aws-rds-snapshot-export-pipeline-cdk.ts"`
+    - `cdk synth RdsSnapshotExportToS3Pipeline --app "npx ts-node --prefer-ts-exts bin/aws-rds-snapshot-export-pipeline-cdk.ts"`
+    - `cdk deploy RdsSnapshotExportToS3Pipeline --app "npx ts-node --prefer-ts-exts bin/aws-rds-snapshot-export-pipeline-cdk.ts"`
+    - `cdk destroy RdsSnapshotExportToS3Pipeline --app "npx ts-node --prefer-ts-exts bin/aws-rds-snapshot-export-pipeline-cdk.ts"`
