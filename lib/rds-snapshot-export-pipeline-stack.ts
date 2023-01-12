@@ -4,12 +4,8 @@ import { Construct } from 'constructs';
 import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
 import { AccountRootPrincipal, ManagedPolicy, PolicyDocument, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
-import { Topic } from 'aws-cdk-lib/aws-sns';
-import { CfnEventSubscription } from 'aws-cdk-lib/aws-rds';
-import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Code, FunctionUrl, FunctionUrlAuthType, Runtime } from 'aws-cdk-lib/aws-lambda';
 import path = require('path');
-import { SnsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
-import { CfnCrawler } from 'aws-cdk-lib/aws-glue';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 export enum RdsEventId {
@@ -39,11 +35,6 @@ export interface RdsSnapshotExportPipelineStackProps extends cdk.StackProps {
    * Name of the database cluster whose snapshots the function supports exporting.
    */
   readonly dbName: string;
-
-  /**
-   * The RDS event ID for which the function should be triggered.
-   */
-  readonly rdsEventId: RdsEventId;
 };
 
 export class RdsSnapshotExportPipelineStack extends cdk.Stack {
@@ -52,7 +43,8 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
 
     const bucket = new Bucket(this, "SnapshotExportBucket", {
       bucketName: props.s3BucketName,
-      removalPolicy: config.get('bucket.removalpolicy'),
+      removalPolicy: config.get('defaultremovalpolicy'),
+      autoDeleteObjects: true,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
     });
 
@@ -107,29 +99,6 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
       ],
     });
 
-    const snapshotExportGlueCrawlerRole = new Role(this, "SnapshotExportsGlueCrawlerRole", {
-      assumedBy: new ServicePrincipal("glue.amazonaws.com"),
-      description: "Role used by RDS to perform snapshot exports to S3",
-      inlinePolicies: {
-        "SnapshotExportsGlueCrawlerPolicy": PolicyDocument.fromJson({
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Action": [
-                "s3:GetObject",
-                "s3:PutObject"
-              ],
-              "Resource": `${bucket.bucketArn}/*`,
-            }
-          ],
-        }),
-      },
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSGlueServiceRole"),
-      ],
-    });
-
     const snapshotExportEncryptionKey = new Key(this, "SnapshotExportEncryptionKey", {
       alias: props.dbName + "-snapshot-exports",
       policy: PolicyDocument.fromJson({
@@ -139,8 +108,7 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
             "Principal": {
               "AWS": [
                 (new AccountRootPrincipal()).arn,
-                lambdaExecutionRole.roleArn,
-                snapshotExportGlueCrawlerRole.roleArn
+                lambdaExecutionRole.roleArn
               ]
             },
             "Action": [
@@ -192,50 +160,26 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
       })
     });
 
-    const snapshotEventTopic = new Topic(this, "SnapshotEventTopic", {
-      displayName: "rds-snapshot-creation"
-    });
-
-    new CfnEventSubscription(this, 'RdsSnapshotEventNotification', {
-      snsTopicArn: snapshotEventTopic.topicArn,
-      enabled: true,
-      eventCategories: props.rdsEventId == RdsEventId.DB_AUTOMATED_AURORA_SNAPSHOT_CREATED ? ['backup'] : ['creation'],
-      sourceType: props.rdsEventId == RdsEventId.DB_AUTOMATED_AURORA_SNAPSHOT_CREATED ? 'db-cluster-snapshot' : 'db-snapshot',
-    });
-
-    new lambda.Function(this, "LambdaFunction", {
+    const lambdaFunction = new lambda.Function(this, "LambdaFunction", {
       functionName: props.dbName + "-rds-snapshot-exporter",
       runtime: Runtime.PYTHON_3_8,
       handler: "main.handler",
       code: Code.fromAsset(path.join(__dirname, "/../assets/exporter/")),
       environment: {
-        RDS_EVENT_ID: props.rdsEventId,
-        DB_NAME: props.dbName,
         LOG_LEVEL: "INFO",
+        DB_NAME: props.dbName,
         SNAPSHOT_BUCKET_NAME: bucket.bucketName,
         SNAPSHOT_TASK_ROLE: snapshotExportTaskRole.roleArn,
-        SNAPSHOT_TASK_KEY: snapshotExportEncryptionKey.keyArn,
-        DB_SNAPSHOT_TYPE: props.rdsEventId == RdsEventId.DB_AUTOMATED_AURORA_SNAPSHOT_CREATED ? "cluster-snapshot" : "snapshot",
+        SNAPSHOT_TASK_KEY: snapshotExportEncryptionKey.keyArn
       },
       role: lambdaExecutionRole,
-      timeout: cdk.Duration.seconds(30),
-      events: [
-        new SnsEventSource(snapshotEventTopic)
-      ]
+      timeout: cdk.Duration.seconds(30)
     });
 
-    new CfnCrawler(this, "SnapshotExportCrawler", {
-      name: props.dbName + "-rds-snapshot-crawler",
-      role: snapshotExportGlueCrawlerRole.roleArn,
-      targets: {
-        s3Targets: [
-          {path: bucket.bucketName},
-        ]
-      },
-      databaseName: props.dbName.replace(/[^a-zA-Z0-9_]/g, "_"),
-      schemaChangePolicy: {
-        deleteBehavior: 'DELETE_FROM_DATABASE'
-      }
-    });
+    const functionUrl = new FunctionUrl(this, "FunctionUrl", {
+      function: lambdaFunction,
+      authType: FunctionUrlAuthType.AWS_IAM
+    })
+    
   }
 }

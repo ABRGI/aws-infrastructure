@@ -1,11 +1,10 @@
 {
-    "rds": {
-        "database": {
-            "name": "dev-saas-nelson-services-db-cluster"
-        }
-    },
-    "bucket": {
-        "name": "dev-saas-nelson-services-db-cluster-snapshot-backup",
-        "removalpolicy": "destroy"
+    "environmentname": "Dev",
+    "databasename": "saas-nelson-services-db-cluster",
+    "defaultremovalpolicy": "destroy",
+    "rdssnapshotexportpipelinestack": {
+        "bucketname": "rds-snapshot-backup",
+        "publicreadaccess": false
     }
+
 }

@@ -51,5 +51,10 @@
     },
     "nelsontenantmanagementservicetack": {
         "tenanttable": "nelson-tenants"
+    },
+    "rdssnapshotexportpipelinestack": {
+        "bucketname": "${databasename}-snapshot-backup",
+        "publicreadaccess": false
     }
+
 }
