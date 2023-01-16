@@ -1,3 +1,8 @@
+/*
+* Code exports a snapshot of the nelson RDS to S3 bucket. Then clears legacy data from the RDS records.
+  Ref: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-export-snapshot.html
+*/
+
 import * as cdk from 'aws-cdk-lib';
 import * as config from 'config';
 import { Construct } from 'constructs';
@@ -7,34 +12,23 @@ import { Key } from 'aws-cdk-lib/aws-kms';
 import { Code, FunctionUrl, FunctionUrlAuthType, Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
-export interface RdsSnapshotExportPipelineStackProps extends cdk.StackProps {
-  readonly environmentName: string
-  /**
-   * Name of the S3 bucket to which snapshot exports should be saved.
-   *
-   * NOTE: Bucket will be created if one does not already exist.
-   */
-  readonly s3BucketName: string;
-
-  /**
-   * Name of the database cluster whose snapshots the function supports exporting.
-   */
-  readonly dbName: string;
-};
 
 const accountRootPrincipal = new AccountRootPrincipal();
 export class RdsSnapshotExportPipelineStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: RdsSnapshotExportPipelineStackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const dbName = `${config.get('environmentname')}-${config.get('rdssnapshotexportpipelinestack.databasename')}`;
+    const backupS3BucketName = `${dbName}-${config.get('rdssnapshotexportpipelinestack.bucketnamepostfix')}`;
+
     const rdsSnapshotExportTaskRole = new Role(this, "RdsSnapshotExportTaskRole", {
-      roleName: `${props.environmentName}RdsSnapshotExportTaskRole`,
+      roleName: `${config.get('environmentname')}RdsSnapshotExportTaskRole`,
       assumedBy: new ServicePrincipal("export.rds.amazonaws.com"),
       description: "Role used by RDS to perform snapshot exports to S3",
     });
 
     const lambdaExecutionRole = new Role(this, "RdsSnapshotExporterLambdaExecutionRole", {
-      roleName: `${props.environmentName}RdsSnapshotExporterLambdaExecutionRole`,
+      roleName: `${config.get('environmentname')}RdsSnapshotExporterLambdaExecutionRole`,
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
       description: 'RdsSnapshotExportToS3 Lambda execution role',
       inlinePolicies: {
@@ -105,7 +99,7 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
     })
 
     const bucket = new Bucket(this, "RdsSnapshotExportBucket", {
-      bucketName: props.s3BucketName,
+      bucketName: backupS3BucketName,
       removalPolicy: config.get('defaultremovalpolicy'),
       autoDeleteObjects: true,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
