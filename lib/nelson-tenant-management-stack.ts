@@ -12,14 +12,20 @@ import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
-import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
+import { EndpointType, LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
-import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { UserPool } from 'aws-cdk-lib/aws-cognito';
+import { HttpMethod } from 'aws-cdk-lib/aws-lambda';
+
+export interface TenantManagementProps extends cdk.StackProps {
+    userPool: UserPool,
+    userPoolName: string
+}
 
 export class NelsonTenantManagementServiceStack extends cdk.Stack {
     tenantManagementServiceApiGw: cdk.aws_apigateway.RestApi;
     tenantPropertyBucket: cdk.aws_s3.Bucket;
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    constructor(scope: Construct, id: string, props: TenantManagementProps) {
         super(scope, id, props);
         //Create the tenant table
         const tenantTable = new dynamodb.Table(this, 'TenantTable', {
@@ -31,6 +37,19 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             readCapacity: 2,        //TODO: Find the correct values for read and write capacities
             writeCapacity: 2
         });
+
+        //Create the tenant bucket only if it is required. This will mostly be true only for production.
+        if (config.get('nelsontenantmanagementservicetack.createbucket')) {
+            //When a new tenant is created, add a cloud front distribution with path as /{client or env name}
+            this.tenantPropertyBucket = new Bucket(this, `TenantPropsBucket`, {
+                bucketName: config.get('nelsontenantmanagementservicetack.bucketname'),
+                removalPolicy: config.get('defaultremovalpolicy'),
+                publicReadAccess: config.get('nelsontenantmanagementservicetack.publicreadaccess'),
+                //Block all public access: off
+                blockPublicAccess: new BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
+            });
+            this.tenantPropertyBucket.grantPublicAccess();
+        }
 
         const listTenantFn = new lambda.Function(this, 'ListTenantsFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
@@ -46,29 +65,23 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             }
         });
         listTenantFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
         tenantTable.grantReadWriteData(listTenantFn);
 
-        //Create the tenant bucket only if it is required. This will mostly be true only for production.
-        if (config.get('nelsontenantmanagementservicetack.createbucket')) {
-            //When a new tenant is created, add a cloud front distribution with path as /{client or env name}
-            this.tenantPropertyBucket = new Bucket(this, `TenantPropsBucket`, {
-                bucketName: config.get('nelsontenantmanagementservicetack.bucketname'),
-                removalPolicy: config.get('defaultremovalpolicy'),
-                publicReadAccess: config.get('nelsontenantmanagementservicetack.publicreadaccess'),
-                //Block all public access: off
-                blockPublicAccess: new BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
-            });
-
-            const tenantPropsBucketPolicyStatement = new PolicyStatement({
-                effect: Effect.ALLOW,
-                actions: [
-                    's3:GetObject'
-                ],
-                resources: [`${this.tenantPropertyBucket.bucketArn}/*`],
-            });
-            this.tenantPropertyBucket.addToResourcePolicy(tenantPropsBucketPolicyStatement);
-        }
+        const manageTenantPropertiesFn = new lambda.Function(this, 'ManageTenantPropertiesFunction', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            architecture: lambda.Architecture.ARM_64,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: `${config.get('environmentname')}ManageTenantProperties`,
+            timeout: cdk.Duration.seconds(3),
+            description: 'This function gets or updates the tenant properties based on HTTP method. Required params tenant name, tenant environment',
+            environment: {
+                TENANT_PROPS_BUCKET: config.get('nelsontenantmanagementservicetack.bucketname'),
+                ENV_REGION: this.region,
+            }
+        });
+        manageTenantPropertiesFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        this.tenantPropertyBucket.grantReadWrite(manageTenantPropertiesFn);
 
         this.tenantManagementServiceApiGw = new apigw.LambdaRestApi(this, 'TenantManagementServiceApi', {
             handler: listTenantFn,
@@ -82,10 +95,25 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         });
         this.tenantManagementServiceApiGw.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
+        const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'TenantManagementServiceAuthorizer', {
+            authorizerName: props.userPoolName,
+            cognitoUserPools: [props.userPool]
+        });
+        auth.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        const methodOptions = {
+            authorizer: auth,
+            authorizationType: apigw.AuthorizationType.COGNITO
+        };
+
+        const manageTenantLambdaIntegration = new LambdaIntegration(manageTenantPropertiesFn);
+
         const tenantManagementApiResource = this.tenantManagementServiceApiGw.root.addResource('api');
         const tenantManagementParentResource = tenantManagementApiResource.addResource('tenant');
         const listTenantsResource = tenantManagementParentResource.addResource('listtenants');
-        listTenantsResource.addMethod('GET', new apigw.LambdaIntegration(listTenantFn));
+        listTenantsResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(listTenantFn));
+        const manageTenantsResource = tenantManagementParentResource.addResource('{tenantid}');
+        manageTenantsResource.addMethod(HttpMethod.GET, manageTenantLambdaIntegration, methodOptions);
+        manageTenantsResource.addMethod(HttpMethod.POST, manageTenantLambdaIntegration, methodOptions);
 
         const tenantManagementServiceDeployment = new apigw.Deployment(this, 'TenantManagementServiceDeployment', {
             api: this.tenantManagementServiceApiGw,
@@ -132,6 +160,15 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             new cdk.Tag('nelson:role', 'tenant-management-service')
         );
         cdk.Aspects.of(this.tenantPropertyBucket).add(
+            new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
+        );
+        cdk.Aspects.of(manageTenantPropertiesFn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(manageTenantPropertiesFn).add(
+            new cdk.Tag('nelson:role', 'tenant-management-service')
+        );
+        cdk.Aspects.of(manageTenantPropertiesFn).add(
             new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
         );
     }

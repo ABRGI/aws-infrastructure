@@ -12,15 +12,17 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { UserPool } from 'aws-cdk-lib/aws-cognito';
+import { HttpMethod } from 'aws-cdk-lib/aws-lambda';
 
 export interface UserManagementProps extends cdk.StackProps {
     loginUrl: string,
     userPoolName: string,
     userPoolId: string,
+    userPool: UserPool,
     clientId: string,
     clientSecret: Secret
 }
@@ -29,7 +31,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
     userManagementServiceApiGw: cdk.aws_apigateway.RestApi;
     constructor(scope: Construct, id: string, props: UserManagementProps) {
         super(scope, id, props);
-        const nelsonUserPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", props.userPoolName);
         /*Step 1: Create the Dynamo DB tables
             * User
             * Access Roles
@@ -240,7 +241,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         */
         const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'UserManagementServiceAuthorizer', {
             authorizerName: props.userPoolName,
-            cognitoUserPools: [nelsonUserPool]
+            cognitoUserPools: [props.userPool]
         });
         auth.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         const methodOptions = {
@@ -250,22 +251,22 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         const userManagementApiResource = this.userManagementServiceApiGw.root.addResource('api');
         const userManagementParentResource = userManagementApiResource.addResource('user');
         const userLoginResource = userManagementParentResource.addResource('login');
-        userLoginResource.addMethod('POST', new apigw.LambdaIntegration(loginFn));
+        userLoginResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(loginFn));
         const userLogoutResource = userManagementParentResource.addResource('logout');
-        userLogoutResource.addMethod('POST', new apigw.LambdaIntegration(logoutFn));
+        userLogoutResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(logoutFn));
         const confirmUserResource = userManagementParentResource.addResource('confirmuser');
-        confirmUserResource.addMethod('POST', new apigw.LambdaIntegration(confirmUserFn));
+        confirmUserResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(confirmUserFn));
         const resetUserResource = userManagementParentResource.addResource('resetpassword');
-        resetUserResource.addMethod('POST', new apigw.LambdaIntegration(resetUserPasswordFn), methodOptions);
+        resetUserResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(resetUserPasswordFn), methodOptions);
         const listUsersResource = userManagementParentResource.addResource('listusers');
-        listUsersResource.addMethod('GET', new apigw.LambdaIntegration(listUsersFn), methodOptions);
+        listUsersResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(listUsersFn), methodOptions);
         const usersResource = userManagementParentResource.addResource('user');
-        usersResource.addMethod('GET', new apigw.LambdaIntegration(getUserInfoFn), methodOptions);
-        usersResource.addMethod('POST', new apigw.LambdaIntegration(updateUserFn), methodOptions);
+        usersResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(getUserInfoFn), methodOptions);
+        usersResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(updateUserFn), methodOptions);
         const rolesResource = userManagementParentResource.addResource('roles');
         const updateRoleIntegration = new apigw.LambdaIntegration(updateRoleFn)
-        rolesResource.addMethod('GET', updateRoleIntegration, methodOptions);
-        rolesResource.addMethod('POST', updateRoleIntegration, methodOptions);
+        rolesResource.addMethod(HttpMethod.GET, updateRoleIntegration, methodOptions);
+        rolesResource.addMethod(HttpMethod.POST, updateRoleIntegration, methodOptions);
 
         const userManagementServiceDeployment = new apigw.Deployment(this, 'UserManagementServiceDeployment', {
             api: this.userManagementServiceApiGw,

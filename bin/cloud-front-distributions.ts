@@ -44,7 +44,8 @@ const userManagementServiceStack = new NelsonUserManagementServiceStack(app, `${
     userPoolId: config.get('nelsonloginproviderstack.nelsonuserpoolid') != '' ? config.get('nelsonloginproviderstack.nelsonuserpoolid') : loginProviderStack.nelsonUserPool.userPoolId,
     loginUrl: config.get('nelsonloginproviderstack.loginurl') != '' ? config.get('nelsonloginproviderstack.loginurl') : loginProviderStack.userPoolDomain.baseUrl(),
     clientId: loginProviderStack.userPoolClient.userPoolClientId,
-    clientSecret: loginProviderStack.userPoolClientSecret
+    clientSecret: loginProviderStack.userPoolClientSecret,
+    userPool: loginProviderStack.nelsonUserPool
 });
 const muiInfrastructureStack = new MuiInfrastructureStack(app, `${config.get('environmentname')}MuiInfrastructure`, {
     env: {
@@ -56,7 +57,9 @@ const tenantManagementServiceStack = new NelsonTenantManagementServiceStack(app,
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-    }
+    },
+    userPool: loginProviderStack.nelsonUserPool,
+    userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool')
 })
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {
