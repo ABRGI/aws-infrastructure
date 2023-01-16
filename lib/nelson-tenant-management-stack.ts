@@ -12,16 +12,19 @@ import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
-import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
+import { EndpointType, LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
+import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
+import { UserPool } from 'aws-cdk-lib/aws-cognito';
+import { HttpMethod } from 'aws-cdk-lib/aws-lambda';
 
 export interface TenantManagementProps extends cdk.StackProps {
-    userPoolName: string,
-    userPoolId: string,
+    userPool: UserPool,
+    userPoolName: string
 }
 
 export class NelsonTenantManagementServiceStack extends cdk.Stack {
     tenantManagementServiceApiGw: cdk.aws_apigateway.RestApi;
+    tenantPropertyBucket: cdk.aws_s3.Bucket;
     constructor(scope: Construct, id: string, props: TenantManagementProps) {
         super(scope, id, props);
         //Create the tenant table
@@ -35,6 +38,19 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             writeCapacity: 2
         });
 
+        //Create the tenant bucket only if it is required. This will mostly be true only for production.
+        if (config.get('nelsontenantmanagementservicetack.createbucket')) {
+            //When a new tenant is created, add a cloud front distribution with path as /{client or env name}
+            this.tenantPropertyBucket = new Bucket(this, `TenantPropsBucket`, {
+                bucketName: config.get('nelsontenantmanagementservicetack.bucketname'),
+                removalPolicy: config.get('defaultremovalpolicy'),
+                publicReadAccess: config.get('nelsontenantmanagementservicetack.publicreadaccess'),
+                //Block all public access: off
+                blockPublicAccess: new BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
+            });
+            this.tenantPropertyBucket.grantPublicAccess();
+        }
+
         const listTenantFn = new lambda.Function(this, 'ListTenantsFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
@@ -42,15 +58,30 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
             functionName: `${config.get('environmentname')}ListTenantsFunction`,
             timeout: cdk.Duration.seconds(3),
-            description: 'This function helps to login the user',
+            description: 'This function lists the tenants for nelson based on search criteria',
             environment: {
                 TENANT_TABLE: config.get('nelsontenantmanagementservicetack.tenanttable'),
                 ENV_REGION: this.region,
             }
         });
         listTenantFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
         tenantTable.grantReadWriteData(listTenantFn);
+
+        const manageTenantPropertiesFn = new lambda.Function(this, 'ManageTenantPropertiesFunction', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            architecture: lambda.Architecture.ARM_64,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: `${config.get('environmentname')}ManageTenantProperties`,
+            timeout: cdk.Duration.seconds(3),
+            description: 'This function gets or updates the tenant properties based on HTTP method. Required params tenant name, tenant environment',
+            environment: {
+                TENANT_PROPS_BUCKET: config.get('nelsontenantmanagementservicetack.bucketname'),
+                ENV_REGION: this.region,
+            }
+        });
+        manageTenantPropertiesFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        this.tenantPropertyBucket.grantReadWrite(manageTenantPropertiesFn);
 
         this.tenantManagementServiceApiGw = new apigw.LambdaRestApi(this, 'TenantManagementServiceApi', {
             handler: listTenantFn,
@@ -64,16 +95,9 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         });
         this.tenantManagementServiceApiGw.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-        //Add API authoriziation layer
-        /*Note: Once the authorizer is created, on aws console, edit, reselect the userpool and save.
-            Looks like cdk has an issue where the userpool is not properly configured. Authorization fails if this is not done.
-            For all the resources using this auth, remove and add again from the console.
-            Alternate: Remove method options from the script below and deploy. Then add back and redeploy after updating the auth on console.
-        */
-        const nelsonUserPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", props.userPoolName);
         const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'TenantManagementServiceAuthorizer', {
             authorizerName: props.userPoolName,
-            cognitoUserPools: [nelsonUserPool]
+            cognitoUserPools: [props.userPool]
         });
         auth.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         const methodOptions = {
@@ -81,10 +105,15 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             authorizationType: apigw.AuthorizationType.COGNITO
         };
 
+        const manageTenantLambdaIntegration = new LambdaIntegration(manageTenantPropertiesFn);
+
         const tenantManagementApiResource = this.tenantManagementServiceApiGw.root.addResource('api');
         const tenantManagementParentResource = tenantManagementApiResource.addResource('tenant');
         const listTenantsResource = tenantManagementParentResource.addResource('listtenants');
-        listTenantsResource.addMethod('GET', new apigw.LambdaIntegration(listTenantFn), methodOptions);
+        listTenantsResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(listTenantFn));
+        const manageTenantsResource = tenantManagementParentResource.addResource('{tenantid}');
+        manageTenantsResource.addMethod(HttpMethod.GET, manageTenantLambdaIntegration, methodOptions);
+        manageTenantsResource.addMethod(HttpMethod.POST, manageTenantLambdaIntegration, methodOptions);
 
         const tenantManagementServiceDeployment = new apigw.Deployment(this, 'TenantManagementServiceDeployment', {
             api: this.tenantManagementServiceApiGw,
@@ -115,7 +144,6 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         cdk.Aspects.of(listTenantFn).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
-
         cdk.Aspects.of(this.tenantManagementServiceApiGw).add(
             new cdk.Tag('nelson:client', `saas`)
         );
@@ -124,6 +152,24 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         );
         cdk.Aspects.of(this.tenantManagementServiceApiGw).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(this.tenantPropertyBucket).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(this.tenantPropertyBucket).add(
+            new cdk.Tag('nelson:role', 'tenant-management-service')
+        );
+        cdk.Aspects.of(this.tenantPropertyBucket).add(
+            new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
+        );
+        cdk.Aspects.of(manageTenantPropertiesFn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(manageTenantPropertiesFn).add(
+            new cdk.Tag('nelson:role', 'tenant-management-service')
+        );
+        cdk.Aspects.of(manageTenantPropertiesFn).add(
+            new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
         );
     }
 }

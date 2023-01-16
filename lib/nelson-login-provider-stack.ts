@@ -29,7 +29,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
 
         //Step 1: Create the user pool
         this.nelsonUserPool = new cognito.UserPool(this, 'NelsonUserPool', {
-            accountRecovery: cognito.AccountRecovery.NONE,
+            accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
             deviceTracking: {
                 challengeRequiredOnNewDevice: false,
                 deviceOnlyRememberedOnUserPrompt: false
@@ -98,7 +98,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
 
         this.userPoolClientSecret = new Secret(this, 'UserPoolClientSecret', {
             description: `Secret for ${config.get('environmentname')} env userpool ${config.get('nelsonloginproviderstack.appname')} client secret`,
-            secretName: `${config.get('environmentname')}_${config.get('nelsonloginproviderstack.nelsonuserpool')}_${config.get('nelsonloginproviderstack.appname')}`,
+            secretName: `${config.get('environmentname')}_${config.get('nelsonloginproviderstack.nelsonuserpool')}_${config.get('nelsonloginproviderstack.appname')}_secret`,
             secretStringValue: config.get('nelsonloginproviderstack.generatesecret') ? this.userPoolClient.userPoolClientSecret : undefined
         })
         this.userPoolClientSecret.applyRemovalPolicy(config.get('defaultremovalpolicy'));
@@ -124,39 +124,9 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         //Step 4: Add permissions to the pretokengenerator function to access the correct Dynamo DB tables
         const userTable = dynamodb.Table.fromTableName(this, 'usertable', config.get('nelsonusermanagementservicetack.usertable'));
         const accessRolesTable = dynamodb.Table.fromTableName(this, 'accessrolestable', config.get('nelsonusermanagementservicetack.accessrolestable'));
-        const accessRightsTable = dynamodb.Table.fromTableName(this, 'accessrightstable', config.get('nelsonusermanagementservicetack.accessrightstable'));
 
         userTable.grantReadData(preTokenGeneratorFn);
         accessRolesTable.grantReadData(preTokenGeneratorFn);
-        accessRightsTable.grantReadData(preTokenGeneratorFn);
-
-        //Step 5: Add Cfn outputs as required
-        new cdk.CfnOutput(this, 'PreTokenGeneratorOutput', {
-            value: preTokenGeneratorFn.functionArn,
-            description: 'Pre-token generator function ARN',
-            exportName: 'pretokengeneratorfnoutput'
-        });
-
-        new cdk.CfnOutput(this, 'NelsonUserPoolOutput', {
-            value: this.nelsonUserPool.userPoolArn,
-            description: 'Nelson user pool ARN',
-            exportName: 'nelsonuserpooloutput'
-        });
-
-        new cdk.CfnOutput(this, 'NelsonUserPoolIdOutput', {
-            value: this.nelsonUserPool.userPoolId,
-            description: 'Nelson user pool ID',
-            exportName: 'nelsonuserpoolidoutput'
-        });
-
-        //Display secret only if configured to display
-        if (config.get('nelsonloginproviderstack.generatesecret') && config.get('nelsonloginproviderstack.revealclientsecretinoutput')) {
-            new cdk.CfnOutput(this, 'NelsonUserPoolClientSecret', {
-                value: this.userPoolClient.userPoolClientSecret.unsafeUnwrap(),
-                description: 'User pool app client secret value',
-                exportName: 'nelsonuserpoolclientsecret'
-            });
-        }
 
         //Step 6: Add tags to resources
         cdk.Aspects.of(this.nelsonUserPool).add(

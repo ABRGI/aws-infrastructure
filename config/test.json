@@ -15,7 +15,6 @@
         "loginprovideremaildomain": "nelson.management",
         "logincallbackurls": ["https://test.nelson.management/users"],
         "appname": "nelsonmanagement",
-        "revealclientsecretinoutput": false,
         "cognitodomainprefix": "testnelsonmanagementlogin",
         "loginurl": "",
         "generatesecret": true
@@ -23,7 +22,6 @@
     "nelsonusermanagementservicetack": {
         "usertable": "test-user-management-users",
         "accessrolestable": "test-user-management-access-roles",
-        "accessrightstable": "test-user-management-access-rights",
         "newuserpassword": "Welcome@Nelson123"
     },
     "defaultremovalpolicy": "destroy",
@@ -49,6 +47,7 @@
         "nelsonenvironment": "test-saas"
     },
     "nelsontenantmanagementservicetack": {
+        "createbucket": false,
         "tenanttable": "test-nelson-tenants"
     }
 }

@@ -12,15 +12,17 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { UserPool } from 'aws-cdk-lib/aws-cognito';
+import { HttpMethod } from 'aws-cdk-lib/aws-lambda';
 
 export interface UserManagementProps extends cdk.StackProps {
     loginUrl: string,
     userPoolName: string,
     userPoolId: string,
+    userPool: UserPool,
     clientId: string,
     clientSecret: Secret
 }
@@ -29,11 +31,9 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
     userManagementServiceApiGw: cdk.aws_apigateway.RestApi;
     constructor(scope: Construct, id: string, props: UserManagementProps) {
         super(scope, id, props);
-        const nelsonUserPool = cognito.UserPool.fromUserPoolId(this, "NelsonUserPool", props.userPoolName);
         /*Step 1: Create the Dynamo DB tables
             * User
             * Access Roles
-            * Access Rights
         */
         const userTable = new dynamodb.Table(this, 'UserTable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
@@ -49,16 +49,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: config.get('nelsonusermanagementservicetack.accessrolestable'),
-            removalPolicy: config.get('defaultremovalpolicy'),
-            billingMode: dynamodb.BillingMode.PROVISIONED,
-            readCapacity: 2,        //TODO: Find the correct values for read and write capacities
-            writeCapacity: 2
-        });
-
-        const accessRightsTable = new dynamodb.Table(this, 'AccessRightsTable', {
-            partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-            tableClass: dynamodb.TableClass.STANDARD,
-            tableName: config.get('nelsonusermanagementservicetack.accessrightstable'),
             removalPolicy: config.get('defaultremovalpolicy'),
             billingMode: dynamodb.BillingMode.PROVISIONED,
             readCapacity: 2,        //TODO: Find the correct values for read and write capacities
@@ -115,7 +105,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
                 ENV_REGION: this.region
             }
         });
@@ -132,7 +121,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
                 ENV_REGION: this.region,
                 USERPOOL_ID: props.userPoolId,
                 TEMP_PASSWORD: config.get('nelsonusermanagementservicetack.newuserpassword')
@@ -147,6 +135,52 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         }));
         updateUserFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
+        const confirmUserFn = new lambda.Function(this, 'ConfirmUserFunction', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            architecture: lambda.Architecture.ARM_64,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: `${config.get('environmentname')}ConfirmUser`,
+            timeout: cdk.Duration.seconds(3),
+            description: 'This function is used to confirm a new user in nelson',
+            environment: {
+                COGNITO_LOGIN_URL: props.loginUrl,
+                ENV_REGION: this.region,
+                USERPOOL_CLIENT_ID: props.clientId,
+                SECRET_NAME: props.clientSecret.secretName,
+                USER_TABLE: config.get('nelsonusermanagementservicetack.usertable')
+            }
+        });
+        props.clientSecret.grantRead(confirmUserFn);
+        confirmUserFn.addToRolePolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ['cognito-idp:RespondToAuthChallenge'],
+            resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${props.userPoolId}`]
+        }));
+        confirmUserFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+        const resetUserPasswordFn = new lambda.Function(this, 'ResetUserPasswordFunction', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            architecture: lambda.Architecture.ARM_64,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: `${config.get('environmentname')}ResetUserPassword`,
+            timeout: cdk.Duration.seconds(3),
+            description: 'This function is used to reset a user password in nelson',
+            environment: {
+                ENV_REGION: this.region,
+                USERPOOL_ID: props.userPoolId,
+                TEMP_PASSWORD: config.get('nelsonusermanagementservicetack.newuserpassword')
+            }
+        });
+        props.clientSecret.grantRead(resetUserPasswordFn);
+        resetUserPasswordFn.addToRolePolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ['cognito-idp:AdminSetUserPassword'],
+            resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${props.userPoolId}`]
+        }));
+        resetUserPasswordFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
         const updateRoleFn = new lambda.Function(this, 'CrudRolesFunction', {
             runtime: lambda.Runtime.NODEJS_18_X,
             architecture: lambda.Architecture.ARM_64,
@@ -157,7 +191,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             description: 'This function is used to update a role with rights and access levels',
             environment: {
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
                 ENV_REGION: this.region
             }
         });
@@ -174,7 +207,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             environment: {
                 USER_TABLE: config.get('nelsonusermanagementservicetack.usertable'),
                 ACCESS_ROLES_TABLE: config.get('nelsonusermanagementservicetack.accessrolestable'),
-                ACCESS_RIGHTS_TABLE: config.get('nelsonusermanagementservicetack.accessrightstable'),
                 ENV_REGION: this.region,
                 USERPOOL_ID: props.userPoolId
             }
@@ -186,12 +218,10 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         userTable.grantReadData(listUsersFn);
         userTable.grantReadData(getUserInfoFn);
         userTable.grantReadWriteData(loginFn);
+        userTable.grantReadWriteData(confirmUserFn);
         accessRolesTable.grantReadWriteData(updateRoleFn);
         accessRolesTable.grantReadData(listUsersFn);
         accessRolesTable.grantReadData(updateUserFn);
-        accessRightsTable.grantReadData(updateRoleFn);
-        accessRightsTable.grantReadData(updateUserFn);
-        accessRightsTable.grantReadData(listUsersFn);
 
         this.userManagementServiceApiGw = new apigw.LambdaRestApi(this, 'UserManagementServiceApi', {
             handler: loginFn,
@@ -211,7 +241,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         */
         const auth = new apigw.CognitoUserPoolsAuthorizer(this, 'UserManagementServiceAuthorizer', {
             authorizerName: props.userPoolName,
-            cognitoUserPools: [nelsonUserPool]
+            cognitoUserPools: [props.userPool]
         });
         auth.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         const methodOptions = {
@@ -221,18 +251,22 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         const userManagementApiResource = this.userManagementServiceApiGw.root.addResource('api');
         const userManagementParentResource = userManagementApiResource.addResource('user');
         const userLoginResource = userManagementParentResource.addResource('login');
-        userLoginResource.addMethod('POST', new apigw.LambdaIntegration(loginFn));
+        userLoginResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(loginFn));
         const userLogoutResource = userManagementParentResource.addResource('logout');
-        userLogoutResource.addMethod('POST', new apigw.LambdaIntegration(logoutFn));
+        userLogoutResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(logoutFn));
+        const confirmUserResource = userManagementParentResource.addResource('confirmuser');
+        confirmUserResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(confirmUserFn));
+        const resetUserResource = userManagementParentResource.addResource('resetpassword');
+        resetUserResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(resetUserPasswordFn), methodOptions);
         const listUsersResource = userManagementParentResource.addResource('listusers');
-        listUsersResource.addMethod('GET', new apigw.LambdaIntegration(listUsersFn), methodOptions);
+        listUsersResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(listUsersFn), methodOptions);
         const usersResource = userManagementParentResource.addResource('user');
-        usersResource.addMethod('GET', new apigw.LambdaIntegration(getUserInfoFn), methodOptions);
-        usersResource.addMethod('POST', new apigw.LambdaIntegration(updateUserFn), methodOptions);
+        usersResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(getUserInfoFn), methodOptions);
+        usersResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(updateUserFn), methodOptions);
         const rolesResource = userManagementParentResource.addResource('roles');
         const updateRoleIntegration = new apigw.LambdaIntegration(updateRoleFn)
-        rolesResource.addMethod('GET', updateRoleIntegration, methodOptions);
-        rolesResource.addMethod('POST', updateRoleIntegration, methodOptions);
+        rolesResource.addMethod(HttpMethod.GET, updateRoleIntegration, methodOptions);
+        rolesResource.addMethod(HttpMethod.POST, updateRoleIntegration, methodOptions);
 
         const userManagementServiceDeployment = new apigw.Deployment(this, 'UserManagementServiceDeployment', {
             api: this.userManagementServiceApiGw,
@@ -241,25 +275,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         new apigw.Stage(this, "UserManagementServiceStage", {
             deployment: userManagementServiceDeployment,
             stageName: config.get('environmentname')
-        });
-
-        //Step 5: Define Cfn outputs
-        new cdk.CfnOutput(this, 'UserTableOutput', {
-            value: userTable.tableArn,
-            description: "Arn of the user table",
-            exportName: 'usertableoutput'
-        });
-
-        new cdk.CfnOutput(this, 'AccessRolesTableOutput', {
-            value: accessRolesTable.tableArn,
-            description: "Arn of the accessroles table",
-            exportName: 'accessrolestableoutput'
-        });
-
-        new cdk.CfnOutput(this, 'AccessRightsTableOutput', {
-            value: accessRightsTable.tableArn,
-            description: "Arn of the accessrights table",
-            exportName: 'accessrightstableoutput'
         });
 
         //Step 6: Tag resources
@@ -283,16 +298,6 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        cdk.Aspects.of(accessRightsTable).add(
-            new cdk.Tag('nelson:client', `saas`)
-        );
-        cdk.Aspects.of(accessRightsTable).add(
-            new cdk.Tag('nelson:role', `user-management-service`)
-        );
-        cdk.Aspects.of(accessRightsTable).add(
-            new cdk.Tag('nelson:environment', config.get('environmentname'))
-        );
-
         cdk.Aspects.of(loginFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );
@@ -310,6 +315,26 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             new cdk.Tag('nelson:role', `user-management-service`)
         );
         cdk.Aspects.of(logoutFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(confirmUserFn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(confirmUserFn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(confirmUserFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(resetUserPasswordFn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(resetUserPasswordFn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(resetUserPasswordFn).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
