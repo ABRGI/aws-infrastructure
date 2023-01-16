@@ -26,12 +26,13 @@ def handler(event, context):
     logger.debug("EVENT INFO:")
     logger.debug(json.dumps(event))
     source_arn = json.loads(event["body"])["Source ARN"]
+    s3_bucket_name = json.loads(event["body"])["S3 Bucket Name"]
     regex = r"[a-z][a-z0-9\-]{0,254}$"
     export_task_identifier = re.search(regex, source_arn).group()
     response = boto3.client("rds").start_export_task(
         ExportTaskIdentifier=export_task_identifier,
         SourceArn=source_arn,
-        S3BucketName=os.environ["SNAPSHOT_BUCKET_NAME"],
+        S3BucketName=s3_bucket_name,
         IamRoleArn=os.environ["SNAPSHOT_TASK_ROLE"],
         KmsKeyId=os.environ["SNAPSHOT_TASK_KEY"],
     )

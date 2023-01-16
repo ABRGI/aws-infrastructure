@@ -53,7 +53,7 @@
         "tenanttable": "nelson-tenants"
     },
     "rdssnapshotexportpipelinestack": {
-        "bucketname": "${databasename}-snapshot-backup",
+        "bucketnamepostfix": "rds-snapshot-backup",
         "publicreadaccess": false
     }
 

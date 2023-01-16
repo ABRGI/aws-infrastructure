@@ -5,25 +5,10 @@ import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
 import { AccountRootPrincipal, ManagedPolicy, PolicyDocument, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
 import { Code, FunctionUrl, FunctionUrlAuthType, Runtime } from 'aws-cdk-lib/aws-lambda';
-import path = require('path');
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-
-export enum RdsEventId {
-  /**
-   * Event IDs for which the Lambda supports starting a snapshot export task.
-   *
-   * See:
-   *   https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_Events.Messages.html#USER_Events.Messages.cluster-snapshot
-   *   https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Events.Messages.html#USER_Events.Messages.snapshot
-   */
-  // For automated snapshots of Aurora RDS clusters
-  DB_AUTOMATED_AURORA_SNAPSHOT_CREATED = "RDS-EVENT-0169",
-
-  // For automated snapshots of non-Aurora RDS clusters
-  DB_AUTOMATED_SNAPSHOT_CREATED = "RDS-EVENT-0091"
-}
-
+import * as path from 'path';
 export interface RdsSnapshotExportPipelineStackProps extends cdk.StackProps {
+  readonly environmentName: string
   /**
    * Name of the S3 bucket to which snapshot exports should be saved.
    *
@@ -37,46 +22,21 @@ export interface RdsSnapshotExportPipelineStackProps extends cdk.StackProps {
   readonly dbName: string;
 };
 
+const accountRootPrincipal = new AccountRootPrincipal();
 export class RdsSnapshotExportPipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: RdsSnapshotExportPipelineStackProps) {
     super(scope, id, props);
 
-    const bucket = new Bucket(this, "SnapshotExportBucket", {
-      bucketName: props.s3BucketName,
-      removalPolicy: config.get('defaultremovalpolicy'),
-      autoDeleteObjects: true,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-    });
-
-    const snapshotExportTaskRole = new Role(this, "SnapshotExportTaskRole", {
+    const rdsSnapshotExportTaskRole = new Role(this, "RdsSnapshotExportTaskRole", {
+      roleName: `${props.environmentName}RdsSnapshotExportTaskRole`,
       assumedBy: new ServicePrincipal("export.rds.amazonaws.com"),
       description: "Role used by RDS to perform snapshot exports to S3",
-      inlinePolicies: {
-        "SnapshotExportTaskPolicy": PolicyDocument.fromJson({
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Action": [
-                "s3:PutObject*",
-                "s3:ListBucket",
-                "s3:GetObject*",
-                "s3:DeleteObject*",
-                "s3:GetBucketLocation"
-              ],
-              "Resource": [
-                `${bucket.bucketArn}`,
-                `${bucket.bucketArn}/*`,
-              ],
-              "Effect": "Allow"
-            }
-          ],
-        })
-      }
     });
 
     const lambdaExecutionRole = new Role(this, "RdsSnapshotExporterLambdaExecutionRole", {
+      roleName: `${props.environmentName}RdsSnapshotExporterLambdaExecutionRole`,
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
-      description: 'RdsSnapshotExportToS3 Lambda execution role for the "' + props.dbName + '" database.',
+      description: 'RdsSnapshotExportToS3 Lambda execution role',
       inlinePolicies: {
         "SnapshotExporterLambdaPolicy": PolicyDocument.fromJson({
           "Version": "2012-10-17",
@@ -88,7 +48,7 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
             },
             {
               "Action": "iam:PassRole",
-              "Resource": [snapshotExportTaskRole.roleArn],
+              "Resource": [rdsSnapshotExportTaskRole.roleArn],
               "Effect": "Allow",
             }
           ]
@@ -98,29 +58,12 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
         ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"),
       ],
     });
-
-    const snapshotExportEncryptionKey = new Key(this, "SnapshotExportEncryptionKey", {
-      alias: props.dbName + "-snapshot-exports",
+    
+    const rdsSnapshotExportEncryptionKey = new Key(this, "RdsSnapshotExportEncryptionKey", {
+      alias: `${config.get('environmentname')}-rds-snapshot-export-encryption-key`.toLowerCase(),
       policy: PolicyDocument.fromJson({
         "Version": "2012-10-17",
         "Statement": [
-          {
-            "Principal": {
-              "AWS": [
-                (new AccountRootPrincipal()).arn,
-                lambdaExecutionRole.roleArn
-              ]
-            },
-            "Action": [
-              "kms:Encrypt",
-              "kms:Decrypt",
-              "kms:ReEncrypt*",
-              "kms:GenerateDataKey*",
-              "kms:DescribeKey"
-            ],
-            "Resource": "*",
-            "Effect": "Allow",
-          },
           {
             "Principal": { "AWS": lambdaExecutionRole.roleArn },
             "Action": [
@@ -133,53 +76,41 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
                 "Bool": {"kms:GrantIsForAWSResource": true}
             },
             "Effect": "Allow",
-          },
-          {
-            "Principal": { "AWS": (new AccountRootPrincipal()).arn },
-            "Action": [
-              "kms:CancelKeyDeletion",
-              "kms:Create*",
-              "kms:Delete*",
-              "kms:Describe*",
-              "kms:Disable*",
-              "kms:Enable*",
-              "kms:GenerateDataKey",
-              "kms:Get*",
-              "kms:List*",
-              "kms:Put*",
-              "kms:Revoke*",
-              "kms:ScheduleKeyDeletion",
-              "kms:TagResource",
-              "kms:UntagResource",
-              "kms:Update*"
-            ],
-            "Resource": "*",
-            "Effect": "Allow",
           }
         ]
       })
     });
 
-    const lambdaFunction = new lambda.Function(this, "LambdaFunction", {
-      functionName: props.dbName + "-rds-snapshot-exporter",
+    rdsSnapshotExportEncryptionKey.grantAdmin(accountRootPrincipal);
+    rdsSnapshotExportEncryptionKey.grantEncryptDecrypt(accountRootPrincipal);
+    rdsSnapshotExportEncryptionKey.grantEncryptDecrypt(lambdaExecutionRole);
+
+    const rdsSnapshotExporterLambdaFunction = new lambda.Function(this, "RdsSnapshotExporterLambdaFunction", {
+      functionName: `${config.get('environmentname')}RdsSnapshotExporterLambdaFunction`,
       runtime: Runtime.PYTHON_3_8,
       handler: "main.handler",
       code: Code.fromAsset(path.join(__dirname, "/../assets/exporter/")),
       environment: {
         LOG_LEVEL: "INFO",
-        DB_NAME: props.dbName,
-        SNAPSHOT_BUCKET_NAME: bucket.bucketName,
-        SNAPSHOT_TASK_ROLE: snapshotExportTaskRole.roleArn,
-        SNAPSHOT_TASK_KEY: snapshotExportEncryptionKey.keyArn
+        SNAPSHOT_TASK_ROLE: rdsSnapshotExportTaskRole.roleArn,
+        SNAPSHOT_TASK_KEY: rdsSnapshotExportEncryptionKey.keyArn
       },
       role: lambdaExecutionRole,
       timeout: cdk.Duration.seconds(30)
     });
-
-    const functionUrl = new FunctionUrl(this, "FunctionUrl", {
-      function: lambdaFunction,
+    
+    const rdsSnapshotExporterLambdaFunctionUrl = new FunctionUrl(this, "rdsSnapshotExporterLambdaFunctionUrl", {
+      function: rdsSnapshotExporterLambdaFunction,
       authType: FunctionUrlAuthType.AWS_IAM
     })
-    
+
+    const bucket = new Bucket(this, "RdsSnapshotExportBucket", {
+      bucketName: props.s3BucketName,
+      removalPolicy: config.get('defaultremovalpolicy'),
+      autoDeleteObjects: true,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+    });
+
+    bucket.grantReadWrite(rdsSnapshotExportTaskRole);
   }
 }
