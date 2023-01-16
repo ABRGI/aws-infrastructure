@@ -13,9 +13,12 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { EndpointType } from 'aws-cdk-lib/aws-apigateway';
+import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 export class NelsonTenantManagementServiceStack extends cdk.Stack {
     tenantManagementServiceApiGw: cdk.aws_apigateway.RestApi;
+    tenantPropertyBucket: cdk.aws_s3.Bucket;
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
         //Create the tenant table
@@ -45,6 +48,25 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         listTenantFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         tenantTable.grantReadWriteData(listTenantFn);
+
+        //When a new tenant is created, add a cloud front distribution with path as /{client or env name}
+        this.tenantPropertyBucket = new Bucket(this, `TenantPropsBucket`, {
+            bucketName: config.get('nelsontenantmanagementservicetack.bucketname'),
+            removalPolicy: config.get('defaultremovalpolicy'),
+            publicReadAccess: config.get('nelsontenantmanagementservicetack.publicreadaccess'),
+            //Block all public access: off
+            blockPublicAccess: new BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
+        });
+
+        const tenantPropsBucketPolicyStatement = new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: [
+                's3:GetObject'
+            ],
+            resources: [`${this.tenantPropertyBucket.bucketArn}/*`],
+        });
+
+        this.tenantPropertyBucket.addToResourcePolicy(tenantPropsBucketPolicyStatement);
 
         this.tenantManagementServiceApiGw = new apigw.LambdaRestApi(this, 'TenantManagementServiceApi', {
             handler: listTenantFn,
@@ -92,7 +114,6 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         cdk.Aspects.of(listTenantFn).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
-
         cdk.Aspects.of(this.tenantManagementServiceApiGw).add(
             new cdk.Tag('nelson:client', `saas`)
         );
@@ -101,6 +122,15 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         );
         cdk.Aspects.of(this.tenantManagementServiceApiGw).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(this.tenantPropertyBucket).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(this.tenantPropertyBucket).add(
+            new cdk.Tag('nelson:role', 'tenant-management-service')
+        );
+        cdk.Aspects.of(this.tenantPropertyBucket).add(
+            new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
         );
     }
 }

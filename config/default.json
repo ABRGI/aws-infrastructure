@@ -48,6 +48,12 @@
         "nelsonenvironment": "test-saas"
     },
     "nelsontenantmanagementservicetack": {
-        "tenanttable": "nelson-tenants"
+        "tenanttable": "nelson-tenants",
+        "bucketname": "nelson-tenant-properties",
+        "publicreadaccess": true
+    },
+    "rdssnapshotexportpipelinestack": {
+        "bucketname": "${databasename}-snapshot-backup",
+        "publicreadaccess": false
     }
 }
