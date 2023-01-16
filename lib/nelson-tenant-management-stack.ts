@@ -111,9 +111,9 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         const tenantManagementParentResource = tenantManagementApiResource.addResource('tenant');
         const listTenantsResource = tenantManagementParentResource.addResource('listtenants');
         listTenantsResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(listTenantFn));
-        const manageTenantsResource = tenantManagementParentResource.addResource('{tenantid}');
-        manageTenantsResource.addMethod(HttpMethod.GET, manageTenantLambdaIntegration, methodOptions);
-        manageTenantsResource.addMethod(HttpMethod.POST, manageTenantLambdaIntegration, methodOptions);
+        const manageEnvironmentResource = tenantManagementParentResource.addResource('{tenantname}').addResource('{environmentname}');
+        manageEnvironmentResource.addMethod(HttpMethod.GET, manageTenantLambdaIntegration, methodOptions);
+        manageEnvironmentResource.addMethod(HttpMethod.POST, manageTenantLambdaIntegration, methodOptions);
 
         const tenantManagementServiceDeployment = new apigw.Deployment(this, 'TenantManagementServiceDeployment', {
             api: this.tenantManagementServiceApiGw,
