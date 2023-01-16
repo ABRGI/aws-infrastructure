@@ -26,6 +26,7 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
       assumedBy: new ServicePrincipal("export.rds.amazonaws.com"),
       description: "Role used by RDS to perform snapshot exports to S3",
     });
+    rdsSnapshotExportTaskRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
     const lambdaExecutionRole = new Role(this, "RdsSnapshotExporterLambdaExecutionRole", {
       roleName: `${config.get('environmentname')}RdsSnapshotExporterLambdaExecutionRole`,
@@ -52,7 +53,8 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
         ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"),
       ],
     });
-    
+    lambdaExecutionRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
     const rdsSnapshotExportEncryptionKey = new Key(this, "RdsSnapshotExportEncryptionKey", {
       alias: `${config.get('environmentname')}-rds-snapshot-export-encryption-key`.toLowerCase(),
       policy: PolicyDocument.fromJson({
@@ -67,12 +69,13 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
             ],
             "Resource": "*",
             "Condition": {
-                "Bool": {"kms:GrantIsForAWSResource": true}
+              "Bool": { "kms:GrantIsForAWSResource": true }
             },
             "Effect": "Allow",
           }
         ]
-      })
+      }),
+      removalPolicy: config.get('defaultremovalpolicy')
     });
 
     rdsSnapshotExportEncryptionKey.grantAdmin(accountRootPrincipal);
@@ -92,19 +95,49 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
       role: lambdaExecutionRole,
       timeout: cdk.Duration.seconds(30)
     });
-    
-    const rdsSnapshotExporterLambdaFunctionUrl = new FunctionUrl(this, "rdsSnapshotExporterLambdaFunctionUrl", {
+    rdsSnapshotExporterLambdaFunction.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+    new FunctionUrl(this, "rdsSnapshotExporterLambdaFunctionUrl", {
       function: rdsSnapshotExporterLambdaFunction,
       authType: FunctionUrlAuthType.AWS_IAM
-    })
+    });
 
-    const bucket = new Bucket(this, "RdsSnapshotExportBucket", {
+    const backupBucket = new Bucket(this, "RdsSnapshotExportBucket", {
       bucketName: backupS3BucketName,
       removalPolicy: config.get('defaultremovalpolicy'),
       autoDeleteObjects: true,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
     });
+    backupBucket.grantReadWrite(rdsSnapshotExportTaskRole);
 
-    bucket.grantReadWrite(rdsSnapshotExportTaskRole);
+    cdk.Aspects.of(rdsSnapshotExportEncryptionKey).add(
+      new cdk.Tag('nelson:client', `saas`)
+    );
+    cdk.Aspects.of(rdsSnapshotExportEncryptionKey).add(
+      new cdk.Tag('nelson:role', `rds-export-service`)
+    );
+    cdk.Aspects.of(rdsSnapshotExportEncryptionKey).add(
+      new cdk.Tag('nelson:environment', config.get('environmentname'))
+    );
+
+    cdk.Aspects.of(rdsSnapshotExporterLambdaFunction).add(
+      new cdk.Tag('nelson:client', `saas`)
+    );
+    cdk.Aspects.of(rdsSnapshotExporterLambdaFunction).add(
+      new cdk.Tag('nelson:role', `rds-export-service`)
+    );
+    cdk.Aspects.of(rdsSnapshotExporterLambdaFunction).add(
+      new cdk.Tag('nelson:environment', config.get('environmentname'))
+    );
+
+    cdk.Aspects.of(backupBucket).add(
+      new cdk.Tag('nelson:client', `saas`)
+    );
+    cdk.Aspects.of(backupBucket).add(
+      new cdk.Tag('nelson:role', `rds-export-service`)
+    );
+    cdk.Aspects.of(backupBucket).add(
+      new cdk.Tag('nelson:environment', config.get('environmentname'))
+    );
   }
 }
