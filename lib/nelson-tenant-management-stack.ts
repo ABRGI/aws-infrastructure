@@ -49,24 +49,26 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
 
         tenantTable.grantReadWriteData(listTenantFn);
 
-        //When a new tenant is created, add a cloud front distribution with path as /{client or env name}
-        this.tenantPropertyBucket = new Bucket(this, `TenantPropsBucket`, {
-            bucketName: config.get('nelsontenantmanagementservicetack.bucketname'),
-            removalPolicy: config.get('defaultremovalpolicy'),
-            publicReadAccess: config.get('nelsontenantmanagementservicetack.publicreadaccess'),
-            //Block all public access: off
-            blockPublicAccess: new BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
-        });
+        //Create the tenant bucket only if it is required. This will mostly be true only for production.
+        if (config.get('nelsontenantmanagementservicetack.createbucket')) {
+            //When a new tenant is created, add a cloud front distribution with path as /{client or env name}
+            this.tenantPropertyBucket = new Bucket(this, `TenantPropsBucket`, {
+                bucketName: config.get('nelsontenantmanagementservicetack.bucketname'),
+                removalPolicy: config.get('defaultremovalpolicy'),
+                publicReadAccess: config.get('nelsontenantmanagementservicetack.publicreadaccess'),
+                //Block all public access: off
+                blockPublicAccess: new BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
+            });
 
-        const tenantPropsBucketPolicyStatement = new PolicyStatement({
-            effect: Effect.ALLOW,
-            actions: [
-                's3:GetObject'
-            ],
-            resources: [`${this.tenantPropertyBucket.bucketArn}/*`],
-        });
-
-        this.tenantPropertyBucket.addToResourcePolicy(tenantPropsBucketPolicyStatement);
+            const tenantPropsBucketPolicyStatement = new PolicyStatement({
+                effect: Effect.ALLOW,
+                actions: [
+                    's3:GetObject'
+                ],
+                resources: [`${this.tenantPropertyBucket.bucketArn}/*`],
+            });
+            this.tenantPropertyBucket.addToResourcePolicy(tenantPropsBucketPolicyStatement);
+        }
 
         this.tenantManagementServiceApiGw = new apigw.LambdaRestApi(this, 'TenantManagementServiceApi', {
             handler: listTenantFn,

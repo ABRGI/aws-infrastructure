@@ -48,6 +48,7 @@
         "nelsonenvironment": "test-saas"
     },
     "nelsontenantmanagementservicetack": {
+        "createbucket": true,
         "tenanttable": "nelson-tenants",
         "bucketname": "nelson-tenant-properties",
         "publicreadaccess": true
