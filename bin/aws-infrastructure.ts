@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import * as config from 'config';
 import * as cdk from 'aws-cdk-lib';
-import { SaasInfrastructureStack, VpcStackProps } from '../lib/saas-infrastructure-stack';
-import { VpcInfrastructureStack } from '../lib/vpc-infrastructure-stack';
 import { MuiInfrastructureStack } from '../lib/mui-infrastructure-stack';
+import { VpcInfrastructureStack } from '../lib/vpc-infrastructure-stack';
+import { SaasInfrastructureStack, VpcStackProps } from '../lib/saas-infrastructure-stack';
 
 const app = new cdk.App();
 
