@@ -49,5 +49,20 @@
     "nelsontenantmanagementservicetack": {
         "createbucket": false,
         "tenanttable": "test-nelson-tenants"
+    },
+    "rdssnapshotexportpipelinestack": {
+        "bucket": {
+            "namepostfix": "rds-snapshot-backup",
+            "autoDeleteObjects": true,
+            "publicreadaccess": false,
+            "blockpublicaccess": {
+                "blockpublicacls": true,
+                "blockpublicpolicy": true,
+                "ignorepublicacls": true,
+                "restrictpublicbuckets": true
+            }
+        },
+        "databasename": "saas-nelson-services-db-cluster"
     }
+
 }

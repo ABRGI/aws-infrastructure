@@ -54,8 +54,17 @@
         "publicreadaccess": true
     },
     "rdssnapshotexportpipelinestack": {
-        "bucketnamepostfix": "rds-snapshot-backup",
-        "publicreadaccess": false,
+        "bucket": {
+            "namepostfix": "rds-snapshot-backup",
+            "autoDeleteObjects": false,
+            "publicreadaccess": false,
+            "blockpublicaccess": {
+                "blockpublicacls": true,
+                "blockpublicpolicy": true,
+                "ignorepublicacls": true,
+                "restrictpublicbuckets": true
+            }
+        },
         "databasename": "saas-nelson-services-db-cluster"
     }
 }

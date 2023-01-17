@@ -1,5 +1,0 @@
-{
-    "environmentname": "Dev",
-    "databasename": "saas-nelson-services-db-cluster",
-    "defaultremovalpolicy": "destroy"
-}
