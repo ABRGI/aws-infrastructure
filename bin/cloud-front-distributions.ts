@@ -69,7 +69,7 @@ new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}Nelson
     hostedZone: hostedZoneStack.hostedZone,
     viewerAcmCertificateArn: hostedZoneStack.domainCertificate.certificateArn,
     userManagementApiGatewayRestApiId: userManagementServiceStack.userManagementServiceApiGw.restApiId.toString(),
-    tenantManagementApiGatewayRestApiID: tenantManagementServiceStack.tenantManagementServiceApiGw.restApiId.toString(),
+    tenantManagementApiGatewayRestApiId: tenantManagementServiceStack.tenantManagementServiceApiGw.restApiId.toString(),
     apiGatewayRegion: userManagementServiceStack.region.toString(),
     crossRegionReferences: true,
     muiBucket: muiInfrastructureStack.muiBucket

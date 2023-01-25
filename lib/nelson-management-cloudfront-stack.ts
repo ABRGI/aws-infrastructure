@@ -21,7 +21,7 @@ export interface NelsonCloudFrontStackProps extends cdk.StackProps {
     hostedZone: IHostedZone,
     viewerAcmCertificateArn: string,
     userManagementApiGatewayRestApiId: string,
-    tenantManagementApiGatewayRestApiID: string,
+    tenantManagementApiGatewayRestApiId: string,
     apiGatewayRegion: string,
     muiBucket?: IBucket
 }
@@ -34,6 +34,22 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
         const nelsonCfDistribution = new CloudFrontWebDistribution(this, 'NelsonManagementCFDistribution', {
             comment: `${config.get('domain')}`,
             originConfigs: [
+                //S3 redirect for static website
+                {
+                    connectionTimeout: Duration.seconds(5),
+                    s3OriginSource: {
+                        s3BucketSource: props.muiBucket ?? Bucket.fromBucketName(this, 'MuiBucket', config.get('muiinfrastructurestack.bucketname')),
+                        originPath: '/portal'
+                    },
+                    behaviors: [
+                        //Default behavior
+                        {
+                            isDefaultBehavior: true,
+                            allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                        }
+                    ]
+                },
                 //User management API
                 {
                     connectionTimeout: Duration.seconds(5),
@@ -59,27 +75,11 @@ export class NelsonManagementCloudFrontStack extends cdk.Stack {
                             defaultTtl: Duration.seconds(0)
                         }]
                 },
-                //S3 redirect for static website
-                {
-                    connectionTimeout: Duration.seconds(5),
-                    s3OriginSource: {
-                        s3BucketSource: props.muiBucket ?? Bucket.fromBucketName(this, 'MuiBucket', config.get('muiinfrastructurestack.bucketname')),
-                        originPath: '/portal'
-                    },
-                    behaviors: [
-                        //Default behavior
-                        {
-                            isDefaultBehavior: true,
-                            allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
-                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
-                        }
-                    ]
-                },
                 //Tenant management API
                 {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
-                        domainName: `${props.tenantManagementApiGatewayRestApiID}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
+                        domainName: `${props.tenantManagementApiGatewayRestApiId}.execute-api.${props.apiGatewayRegion}.${this.urlSuffix}`,
                         originPath: `/${config.get('environmentname')}`
                     },
                     behaviors: [
