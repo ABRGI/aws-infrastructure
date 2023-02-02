@@ -37,7 +37,7 @@ export enum RdsEventId {
 export class RdsSnapshotExportPipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-    const dbName = `${String(config.get('environmentname')).toLowerCase()}-${config.get('rdssnapshotexportpipelinestack.databasename')}`;
+    const dbName = `${config.get('rdssnapshotexportpipelinestack.databasename')}`;
     const backupS3BucketName = `${dbName}-${config.get('rdssnapshotexportpipelinestack.bucket.namepostfix')}`;
     const rdsSnapshotExportTaskRole = new Role(this, "RdsSnapshotExportTaskRole", {
       roleName: `${config.get('environmentname')}RdsSnapshotExportTaskRole`,
@@ -98,7 +98,7 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
       environment: {
 				RDS_EVENT_ID: RdsEventId.DB_AUTOMATED_AURORA_SNAPSHOT_CREATED,
 				DB_NAME: dbName,
-        LOG_LEVEL: "INFO",
+        LOG_LEVEL: "DEBUG",
 				SNAPSHOT_BUCKET_NAME: backupS3BucketName,
         SNAPSHOT_TASK_ROLE: rdsSnapshotExportTaskRole.roleArn,
         SNAPSHOT_TASK_KEY: rdsSnapshotExportEncryptionKey.keyArn,

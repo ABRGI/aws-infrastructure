@@ -65,6 +65,6 @@
                 "restrictpublicbuckets": true
             }
         },
-        "databasename": "saas-nelson-services-db-cluster"
+        "databasename": "prod-saas-nelson-services-db-cluster"
     }
 }
