@@ -86,8 +86,8 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
 		new CfnEventSubscription(this, 'RdsSnapshotEventNotification', {
 			snsTopicArn: snapshotEventTopic.topicArn,
 			enabled: true,
-			eventCategories: ['creation'],
-			sourceType:'db-snapshot',
+			eventCategories: ['backup'],
+			sourceType:'db-cluster-snapshot',
 		});
 
     const rdsSnapshotExporterLambdaFunction = new lambda.Function(this, "RdsSnapshotExporterLambdaFunction", {
@@ -102,7 +102,7 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
 				SNAPSHOT_BUCKET_NAME: backupS3BucketName,
         SNAPSHOT_TASK_ROLE: rdsSnapshotExportTaskRole.roleArn,
         SNAPSHOT_TASK_KEY: rdsSnapshotExportEncryptionKey.keyArn,
-				DB_SNAPSHOT_TYPE: "snapshot",
+				DB_SNAPSHOT_TYPE: "cluster-snapshot",
       },
       role: lambdaExecutionRole,
       timeout: cdk.Duration.seconds(30),
