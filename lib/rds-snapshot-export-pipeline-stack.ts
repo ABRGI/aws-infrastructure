@@ -2,7 +2,6 @@
 * Code exports a snapshot of the nelson RDS to S3 bucket. Then clears legacy data from the RDS records.
   Ref: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-export-snapshot.html
 */
-
 import * as cdk from 'aws-cdk-lib';
 import * as config from 'config';
 import { Construct } from 'constructs';
@@ -17,9 +16,7 @@ import { Topic } from 'aws-cdk-lib/aws-sns';
 import { CfnEventSubscription } from 'aws-cdk-lib/aws-rds';
 import { SnsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { CfnCrawler } from 'aws-cdk-lib/aws-glue';
-
 const accountRootPrincipal = new AccountRootPrincipal();
-
 export enum RdsEventId {
   /**
    * Event IDs for which the Lambda supports starting a snapshot export task.
@@ -30,11 +27,9 @@ export enum RdsEventId {
    */
   // For automated snapshots of Aurora RDS clusters
   DB_AUTOMATED_AURORA_SNAPSHOT_CREATED = "RDS-EVENT-0169",
-
   // For automated snapshots of non-Aurora RDS clusters
   DB_AUTOMATED_SNAPSHOT_CREATED = "RDS-EVENT-0091"
 }
-
 export class RdsSnapshotExportPipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -85,18 +80,15 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
       },
       resources: ['*']
     }));
-
     const snapshotEventTopic = new Topic(this, "SnapshotEventTopic", {
       displayName: "rds-snapshot-creation"
     });
-
     new CfnEventSubscription(this, 'RdsSnapshotEventNotification', {
       snsTopicArn: snapshotEventTopic.topicArn,
       enabled: true,
       eventCategories: ['backup'],
       sourceType: 'db-cluster-snapshot',
     });
-
     const rdsSnapshotExporterLambdaFunction = new lambda.Function(this, "RdsSnapshotExporterLambdaFunction", {
       functionName: `${config.get('environmentname')}RdsSnapshotExporterLambdaFunction`,
       runtime: Runtime.PYTHON_3_8,
@@ -136,21 +128,38 @@ export class RdsSnapshotExportPipelineStack extends cdk.Stack {
     });
     backupBucket.grantReadWrite(rdsSnapshotExportTaskRole);
     backupBucket.grantReadWrite(snapshotExportGlueCrawlerRole);
-
+    const eventNotificationQueue = new cdk.aws_sqs.Queue(this, `${config.get('environmentname')}EventNotificationQueue`, {
+      queueName: `${ backupS3BucketName }-enq`,
+      removalPolicy: config.get('defaultremovalpolicy')
+    });
+    backupBucket.addEventNotification(cdk.aws_s3.EventType.OBJECT_CREATED, new cdk.aws_s3_notifications.SqsDestination(eventNotificationQueue));
+    eventNotificationQueue.grantConsumeMessages(snapshotExportGlueCrawlerRole);
+    eventNotificationQueue.grantPurge(snapshotExportGlueCrawlerRole);
     const snapshotExportCrawler = new CfnCrawler(this, "SnapshotExportCrawler", {
       name: `${dbName}-rds-snapshot-crawler`,
       role: snapshotExportGlueCrawlerRole.roleArn,
       targets: {
         s3Targets: [
-          { path: backupBucket.bucketName },
+          {
+            path: backupBucket.bucketName,
+            eventQueueArn: eventNotificationQueue.queueArn
+          }
         ]
       },
       databaseName: dbName.replace(/[^a-zA-Z0-9_]/g, "_"),
       schemaChangePolicy: {
         deleteBehavior: 'DELETE_FROM_DATABASE'
+      },
+      schedule: {
+        // run crawler everyday at 09:00 UTC
+        scheduleExpression: "cron(0 9 * * ? *)"
+      },
+      recrawlPolicy: {
+        // crawling only the changes identified by Amazon S3 events.
+        recrawlBehavior: 'CRAWL_EVENT_MODE'
       }
     });
-
+    snapshotExportCrawler.applyRemovalPolicy(config.get('defaultremovalpolicy'));
     cdk.Aspects.of(rdsSnapshotExportEncryptionKey).add(
       new cdk.Tag('nelson:client', `saas`)
     );
