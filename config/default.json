@@ -54,8 +54,19 @@
         "publicreadaccess": true
     },
     "rdssnapshotexportpipelinestack": {
-        "bucket": {
+        "snapshotbucket": {
             "namepostfix": "rds-snapshot-backup",
+            "autoDeleteObjects": false,
+            "publicreadaccess": false,
+            "blockpublicaccess": {
+                "blockpublicacls": true,
+                "blockpublicpolicy": true,
+                "ignorepublicacls": true,
+                "restrictpublicbuckets": true
+            }
+        },
+        "resultbucket": {
+            "namepostfix": "etl-result",
             "autoDeleteObjects": false,
             "publicreadaccess": false,
             "blockpublicaccess": {

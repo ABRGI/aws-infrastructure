@@ -38,14 +38,15 @@ def handler(event, context):
         "^rds:" + os.environ["DB_NAME"] + "-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}$",
         message["Source ID"],
     ):
-        export_task_identifier = event["Records"][0]["Sns"]["MessageId"]
+        export_task_identifier = (message["Source ID"][4:27] + '-').replace("--", "-") + (event["Records"][0]["Sns"]["Timestamp"][0:10])
         account_id = boto3.client("sts").get_caller_identity()["Account"]
         response = boto3.client("rds").start_export_task(
             ExportTaskIdentifier=(
-                (message["Source ID"][4:27] + '-').replace("--", "-") + event["Records"][0]["Sns"]["MessageId"]
+                export_task_identifier
             ),
             SourceArn=f"arn:aws:rds:{os.environ['AWS_REGION']}:{account_id}:{os.environ['DB_SNAPSHOT_TYPE']}:{message['Source ID']}",
             S3BucketName=os.environ["SNAPSHOT_BUCKET_NAME"],
+
             IamRoleArn=os.environ["SNAPSHOT_TASK_ROLE"],
             KmsKeyId=os.environ["SNAPSHOT_TASK_KEY"],
         )
