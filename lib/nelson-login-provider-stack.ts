@@ -30,10 +30,6 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         //Step 1: Create the user pool
         this.nelsonUserPool = new cognito.UserPool(this, 'NelsonUserPool', {
             accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-            deviceTracking: {
-                challengeRequiredOnNewDevice: false,
-                deviceOnlyRememberedOnUserPrompt: false
-            },
             email: cognito.UserPoolEmail.withSES({
                 fromEmail: `noreply@${config.get('nelsonloginproviderstack.loginprovideremaildomain')}`,
                 fromName: config.get('applicationname'),
