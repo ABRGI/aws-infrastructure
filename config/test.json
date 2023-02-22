@@ -62,7 +62,18 @@
                 "restrictpublicbuckets": true
             }
         },
-        "databasename": "saas-nelson-services-db-cluster"
+        "resultbucket": {
+            "namepostfix": "etl-result",
+            "autoDeleteObjects": true,
+            "publicreadaccess": false,
+            "blockpublicaccess": {
+                "blockpublicacls": true,
+                "blockpublicpolicy": true,
+                "ignorepublicacls": true,
+                "restrictpublicbuckets": true
+            }
+        },
+        "databasename": "dev-saas-nelson-services-db-cluster"
     }
 
 }
