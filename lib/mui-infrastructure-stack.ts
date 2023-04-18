@@ -15,6 +15,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
             bucketName: config.get('muiinfrastructurestack.bucketname'),
             removalPolicy: config.get('defaultremovalpolicy'),
             publicReadAccess: config.get('muiinfrastructurestack.publicreadaccess'),
+            autoDeleteObjects: true,
             //Block all public access: off
             blockPublicAccess: new s3.BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
         });
@@ -31,4 +32,4 @@ export class MuiInfrastructureStack extends cdk.Stack {
             new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
         );
     }
-}
+}  

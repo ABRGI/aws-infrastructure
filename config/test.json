@@ -33,10 +33,19 @@
         "maxazs": 2,
         "cidrMask": 20
     },
+    "useexistingalbsg": false,
+    "albsgId": "",
+    "useexistingfargateclustersg": false,
+    "fargateclustersgid": "",
+    "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
     "buiinfrastructurestack": {
         "bucketname": "test-bui.nelson.management",
         "useexistingbuibucket": false,
-        "publicreadaccess": true
+        "publicreadaccess": true,
+        "hotelbuild": "demo",
+        "locales": "fi, en, et, ru, sv",
+        "hotelchainname": "OmenaHotels",
+        "releaseversion": "1.0"
     },
     "muiinfrastructurestack": {
         "bucketname": "test.nelson.management",
