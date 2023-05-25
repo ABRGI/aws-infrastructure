@@ -112,36 +112,36 @@ export class SaasInfrastructureStack extends cdk.Stack {
             this.fargateClusterSG = fargateClusterSG;
         }
 
-        // const dbSecurityGroup = new ec2.SecurityGroup(this, "dbSecurityGroup", {
-        //     vpc: this.nelsonVpc,
-        //     allowAllOutbound: true,
-        //     description: "Security group for RDS",
-        //     securityGroupName: `${config.get('environmentname')}-db-sg`
-        //   });
-        // for (const privateSubnet of this.nelsonVpc.privateSubnets) {
-        //     console.log('SG' + privateSubnet.ipv4CidrBlock);
-        //     dbSecurityGroup.addIngressRule(ec2.Peer.ipv4(privateSubnet.ipv4CidrBlock), ec2.Port.tcp(5432), 'Receive all traffics from internet via port 443');
-        // }
-        // dbSecurityGroup.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        const dbSecurityGroup = new ec2.SecurityGroup(this, "dbSecurityGroup", {
+            vpc: this.nelsonVpc,
+            allowAllOutbound: true,
+            description: "Security group for RDS",
+            securityGroupName: `${config.get('environmentname')}-db-sg`
+          });
+        for (const privateSubnet of this.nelsonVpc.privateSubnets) {
+            console.log('SG' + privateSubnet.ipv4CidrBlock);
+            dbSecurityGroup.addIngressRule(ec2.Peer.ipv4(privateSubnet.ipv4CidrBlock), ec2.Port.tcp(5432), 'Receive all traffics from internet via port 443');
+        }
+        dbSecurityGroup.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-        // // Create nelson DB
-        // const nelsonDB = new rds.DatabaseCluster(this, 'Database', {
-        //     engine: rds.DatabaseClusterEngine.auroraPostgres({version: rds.AuroraPostgresEngineVersion.VER_13_7}),
-        //     instanceProps: {
-        //         vpc: this.nelsonVpc,
-        //         vpcSubnets: {
-        //             subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
-        //         },
-        //         securityGroups: [dbSecurityGroup],
-        //         publiclyAccessible: false
-        //     },
-        //     defaultDatabaseName: 'nelson',
-        //     instances: 1,
-        //     instanceIdentifierBase: `${config.get('environmentname')}-saas-nelson-services-db-instance-`,
-        //     credentials: rds.Credentials.fromSecret(Secret.fromSecretNameV2(this, 'DBCredential', 'cdkRDSCredential')),
-        //     removalPolicy: config.get('defaultremovalpolicy'),
-        //     clusterIdentifier: `${config.get('environmentname')}-saas-nelson-services-db-cluster`
-        // });
+        // Create nelson DB
+        const nelsonDB = new rds.DatabaseCluster(this, 'Database', {
+            engine: rds.DatabaseClusterEngine.auroraPostgres({version: rds.AuroraPostgresEngineVersion.VER_13_7}),
+            instanceProps: {
+                vpc: this.nelsonVpc,
+                vpcSubnets: {
+                    subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
+                },
+                securityGroups: [dbSecurityGroup],
+                publiclyAccessible: false
+            },
+            defaultDatabaseName: 'nelson',
+            instances: 1,
+            instanceIdentifierBase: `${config.get('environmentname')}-saas-nelson-services-db-instance-`,
+            credentials: rds.Credentials.fromSecret(Secret.fromSecretNameV2(this, 'DBCredential', 'cdkRDSCredential')),
+            removalPolicy: config.get('defaultremovalpolicy'),
+            clusterIdentifier: `${config.get('environmentname')}-saas-nelson-services-db-cluster`
+        });
 
 
 
@@ -206,7 +206,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
         alb.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         // Create ECSCluster
-
         const cluster = new Cluster(this, 'FargateCluster', {
             clusterName: config.get('environmentname'),
             vpc: this.nelsonVpc
@@ -218,8 +217,8 @@ export class SaasInfrastructureStack extends cdk.Stack {
         // taskDefition.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         const taskDefinition = new DummyTaskDefinition(this, 'DummyTaskDefinition', {
             image: 'nginx',
-            family: 'blue-green',
-          });
+            family: 'blue-green'
+        });
 
         const repository = new Repository(this, 'ECR', {
             repositoryName: 'test/nelson',
@@ -282,17 +281,17 @@ export class SaasInfrastructureStack extends cdk.Stack {
         const nelsonCodeBuildSource = codebuild.Source.gitHub({
             owner: 'ABRGI',
             repo: 'nelson',
-            branchOrRef: 'develop',
+            branchOrRef: 'feature/test-exhibition-env',
             webhook: true,
             webhookTriggersBatchBuild: false,
             webhookFilters: [
                 codebuild.FilterGroup
                     .inEventOf(codebuild.EventAction.PUSH)
-                    .andBranchIs('develop'),
+                    .andBranchIs('feature/test-exhibition-env'),
                 codebuild.FilterGroup
                     .inEventOf(codebuild.EventAction.PULL_REQUEST_MERGED)
                     .andHeadRefIs('^refs/heads/*$')
-                    .andBaseRefIs('^refs/heads/develop$')
+                    .andBaseRefIs('^refs/heads/feature/test-exhibition-env$')
             ],
         });
 
@@ -323,12 +322,34 @@ export class SaasInfrastructureStack extends cdk.Stack {
             securityGroups: [this.fargateClusterSG],
             projectName: `${config.get('environmentname')}-nelson`,
             encryptionKey: Key.fromKeyArn(this, 'EncryptionKey', 'arn:aws:kms:eu-central-1:459045743560:alias/aws/s3'),
+            environmentVariables: {
+                ENV: {
+                    value: config.get('environmentname'),
+                    type: BuildEnvironmentVariableType.PLAINTEXT
+                },
+                APP_NAME: {
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.appname'),
+                    type: BuildEnvironmentVariableType.PLAINTEXT
+                },
+                MAJOR_VERSION_NUMBER: {
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.majorversionnumber'),
+                    type: BuildEnvironmentVariableType.PLAINTEXT
+                },
+                MINOR_VERSION_NUMBER: {
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.minorversionnumber'),
+                    type: BuildEnvironmentVariableType.PLAINTEXT
+                },
+                REPO: {
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.repo'),
+                    type: BuildEnvironmentVariableType.PLAINTEXT
+                }
+            }
         });
         nelsonCodeBuildProject.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         // Create code pipelines
-        const nelsonSourceOutput = new Artifact('NelsonSourceOutput');
-        const nelsonDeplSourceOutput = new Artifact('NelsonDeploymentSourceOutput');
+        const nelsonSourceOutput = new Artifact('nelson');
+        const nelsonDeplSourceOutput = new Artifact('nelson-deployment');
 
         // Create nelson code pipelines
         const nelsonSourceAction = new S3SourceAction({
@@ -342,6 +363,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             actionName: 'Source',
             owner: 'ABRGI',
             repo: 'nelson-deployment',
+            branch: 'feature/test-exhibition-env',
             output: nelsonDeplSourceOutput,
             connectionArn: config.get('connectionarn')
         });
@@ -358,7 +380,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             projectName: `${config.get('environmentname')}-nelson-deployment`,
             buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.yml'),
             environment: {
-                buildImage: codebuild.LinuxBuildImage.STANDARD_5_0,
+                buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_3,
                 privileged: true,
                 computeType: codebuild.ComputeType.MEDIUM,
             },
@@ -381,23 +403,27 @@ export class SaasInfrastructureStack extends cdk.Stack {
             outputs: [nelsonDeplBuildOutput],
             environmentVariables: {
                 ENV: {
-                    value: 'stg-omena',
+                    value: config.get('environmentname'),
                     type: BuildEnvironmentVariableType.PLAINTEXT
                 },
                 APP_NAME: {
-                    value: 'nelson',
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.appname'),
                     type: BuildEnvironmentVariableType.PLAINTEXT
                 },
-                MAJOR_VERSION_NUMBER: {
-                    value: '2',
+                HOST_PORT: {
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.hostport'),
                     type: BuildEnvironmentVariableType.PLAINTEXT
                 },
-                MINOR_VERSION_NUMBER: {
-                    value: '12',
+                SERVICE_PORT: {
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.serviceport'),
                     type: BuildEnvironmentVariableType.PLAINTEXT
                 },
-                REPO: {
-                    value: 'SNAPSHOT',
+                CPU: {
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.cpu'),
+                    type: BuildEnvironmentVariableType.PLAINTEXT
+                },
+                MEMORY: {
+                    value: config.get('saasinfrastructurestack.codebuildenvvariables.memory'),
                     type: BuildEnvironmentVariableType.PLAINTEXT
                 }
             }
@@ -446,13 +472,63 @@ export class SaasInfrastructureStack extends cdk.Stack {
                 }
             ],
             taskDefinitionTemplateInput: nelsonDeplBuildOutput,
-            appSpecTemplateInput: nelsonDeplBuildOutput,
+            //appSpecTemplateInput: new ArtifactPath(nelsonDeplBuildOutput, 'appspec.yml').artifact,
+            appSpecTemplateFile: new ArtifactPath(nelsonDeplBuildOutput, 'appspec.yml'),
             role: deployRole
             //role: iam.Role.fromRoleArn(this,  'DMRole','arn:aws:iam::459045743560:role/ecsCodeDeployRole')
         });
+        
+
+        const codePipelinePolicy = new iam.PolicyStatement({
+            actions: [
+                'codedeploy:CreateDeployment',
+                'codedeploy:GetApplication',
+                'codedeploy:GetApplicationRevision',
+                'codedeploy:GetDeployment',
+                'codedeploy:GetDeploymentConfig',
+                'codedeploy:RegisterApplicationRevision',
+                'codebuild:BatchGetBuilds',
+                'codebuild:StartBuild',
+                'codebuild:BatchGetBuildBatches',
+                'codebuild:StartBuildBatch',
+                'elasticbeanstalk:*',
+                'ec2:*',
+                'elasticloadbalancing:*',
+                'autoscaling:*',
+                'cloudwatch:*',
+                's3:*',
+                'sns:*',
+                'cloudformation:*',
+                'rds:*',
+                'sqs:*',
+                'ecs:*'
+            ],
+            resources: ['*']
+        });
+
+        const codePipeLineIAMPolicy = new iam.PolicyStatement({
+            actions: [
+                'iam:PassRole'
+            ],
+            resources: ['*'],
+            conditions: {
+                "StringEqualsIfExists": {
+                    "iam:PassedToService": [
+                        "cloudformation.amazonaws.com",
+                        "elasticbeanstalk.amazonaws.com",
+                        "ec2.amazonaws.com",
+                        "ecs-tasks.amazonaws.com"
+                    ]
+                }
+            }
+        });
+
         const pipeLineRole = new iam.Role(this, "CodePipeLineRole", {
             assumedBy: new iam.ServicePrincipal("codepipeline.amazonaws.com"),
+            roleName: `${config.get('environmentname')}-nelson-deployment-role`
         });
+        pipeLineRole.addToPolicy(codePipelinePolicy);
+        pipeLineRole.addToPolicy(codePipeLineIAMPolicy);
 
         const nelsonCodePipelines = new Pipeline(this, 'NelsonCodePipeline', {
             role: pipeLineRole,

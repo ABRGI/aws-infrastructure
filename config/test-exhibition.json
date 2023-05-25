@@ -1,0 +1,88 @@
+{
+    "environmentname": "test-exhibition",
+    "domain": "test-exhibition.nelson.management",
+    "hostedzonestack": {
+        "hostedzone": "nelson.management",
+        "createnewsubdomaincertificate": true,
+        "createnelsonmanagementcloudfrontentry": true
+    },
+    "applicationname": "Test - Nelson Management",
+    "existingvpcid": "",
+    "nelsonloginproviderstack": {
+        "nelsonuserpool": "test-nelson-users",
+        "nelsonuserpoolid": "",
+        "guestuserpool": "test-guest-users",
+        "loginprovideremaildomain": "nelson.management",
+        "logincallbackurls": ["https://test.nelson.management/users"],
+        "appname": "nelsonmanagement",
+        "cognitodomainprefix": "testnelsonmanagementlogin",
+        "loginurl": "",
+        "generatesecret": true
+    },
+    "nelsonusermanagementservicetack": {
+        "usertable": "test-user-management-users",
+        "accessrolestable": "test-user-management-access-roles",
+        "newuserpassword": "Welcome@Nelson123"
+    },
+    "defaultremovalpolicy": "destroy",
+    "useexistingvpc": false,
+    "existingvpcname": "",
+    "vpcservice": {
+        "cidr": "17.0.0.0/16",
+        "maxnatgateways": 1,
+        "maxazs": 2,
+        "cidrMask": 20
+    },
+    "useexistingalbsg": false,
+    "albsgId": "",
+    "useexistingfargateclustersg": false,
+    "fargateclustersgid": "",
+    "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
+    "buiinfrastructurestack": {
+        "bucketname": "test-exhibitioncourt.bookn.io",
+        "useexistingbuibucket": false,
+        "publicreadaccess": true,
+        "hotelbuild": "salora",
+        "locales": "fi, en, et, ru, sv",
+        "hotelchainname": "SaloHotels",
+        "releaseversion": "1.0"
+    },
+    "muiinfrastructurestack": {
+        "bucketname": "test-exhibitioncourt.nelson.management",
+        "useexistingmuibucket": false,
+        "publicreadaccess": true
+    },
+    "tags": {
+        "nelsonenvironment": "test-exhibition"
+    },
+    "nelsontenantmanagementservicetack": {
+        "createbucket": false,
+        "tenanttable": "test-nelson-tenants"
+    },
+    "rdssnapshotexportpipelinestack": {
+        "bucket": {
+            "namepostfix": "rds-snapshot-backup",
+            "autoDeleteObjects": true,
+            "publicreadaccess": false,
+            "blockpublicaccess": {
+                "blockpublicacls": true,
+                "blockpublicpolicy": true,
+                "ignorepublicacls": true,
+                "restrictpublicbuckets": true
+            }
+        },
+        "databasename": "saas-nelson-services-db-cluster"
+    },
+    "saasinfrastructurestack": {
+        "codebuildenvvariables": {
+            "appname": "nelson",
+            "majorversionnumber": 0,
+            "minorversionnumber": 0,
+            "repo": "SNAPSHOT",
+            "hostport": "8080",
+            "serviceport": "8080",
+            "cpu": "512",
+            "memory": "2048"
+        }
+    }
+}
