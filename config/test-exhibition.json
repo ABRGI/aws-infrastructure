@@ -45,12 +45,21 @@
         "hotelbuild": "salora",
         "locales": "fi, en, et, ru, sv",
         "hotelchainname": "SaloHotels",
-        "releaseversion": "1.0"
+        "releaseversion": "1.0",
+        "repo": "nelson-bui-2.0",
+        "branch": "develop",
+        "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
         "bucketname": "test-exhibitioncourt.nelson.management",
         "useexistingmuibucket": false,
-        "publicreadaccess": true
+        "publicreadaccess": true,
+        "rootfolder": "management",
+        "hotelbuild": "salora",
+        "releaseversion": "2.0",
+        "repo": "nelson-management-ui",
+        "branch": "develop",
+        "owner": "ABRGI"
     },
     "tags": {
         "nelsonenvironment": "test-exhibition"

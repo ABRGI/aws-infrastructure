@@ -260,7 +260,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             path: config.get('environmentname'),
             encryption: true
         });
-
         const nelsonCodeBuildProject = new codebuild.Project(this, 'NelsonCodeBuildProject', {
             buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.yml'),
             artifacts: nelsonCodeBuildArtifacts,
@@ -415,7 +414,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             taskDefinitionTemplateInput: nelsonDeplBuildOutput,
             appSpecTemplateFile: new ArtifactPath(nelsonDeplBuildOutput, 'appspec.yml'),
             role: deployRole
-            //role: iam.Role.fromRoleArn(this,  'DMRole','arn:aws:iam::459045743560:role/ecsCodeDeployRole')
         });
         
         const codePipelinePolicy = new iam.PolicyStatement({
@@ -468,6 +466,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
         });
         pipeLineRole.addToPolicy(codePipelinePolicy);
         pipeLineRole.addToPolicy(codePipeLineIAMPolicy);
+        pipeLineRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         const nelsonCodePipelines = new Pipeline(this, 'NelsonCodePipeline', {
             role: pipeLineRole,

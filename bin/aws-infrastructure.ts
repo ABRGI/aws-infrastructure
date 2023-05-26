@@ -23,7 +23,6 @@ if (config.get('useexistingvpc') == true && config.has('existingvpcname')) {
   nelsonVpc = vpcStack.nelsonVpc;
 };
 
-
 const saasInfrastructureStack = new SaasInfrastructureStack(app, `${config.get('environmentname')}SaasInfrastructure`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
@@ -32,19 +31,21 @@ const saasInfrastructureStack = new SaasInfrastructureStack(app, `${config.get('
     vpc: nelsonVpc
 });
 
-// new BuiInfrastructureStack(app, `${config.get('environmentname')}BuiInfrastructure`, {
-//     env: {
-//         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-//         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-//     },
-//     vpc: saasInfrastructureStack.nelsonVpc,
-//     privateSG: saasInfrastructureStack.fargateClusterSG
-// });
+new BuiInfrastructureStack(app, `${config.get('environmentname')}BuiInfrastructure`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    },
+    vpc: saasInfrastructureStack.nelsonVpc,
+    privateSG: saasInfrastructureStack.fargateClusterSG
+});
 
-// new MuiInfrastructureStack(app, `${config.get('environmentname')}MuiInfrastructure`, {
-//   env: {
-//     account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-//   }
-// });
-//TODO: Continue to implement the remainder of the infrastructure including BUI, MUI, etc...
+new MuiInfrastructureStack(app, `${config.get('environmentname')}MuiInfrastructure`, {
+  env: {
+    account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+  },
+  vpc: saasInfrastructureStack.nelsonVpc,
+  privateSG: saasInfrastructureStack.fargateClusterSG
+});
+

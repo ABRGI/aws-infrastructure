@@ -2,7 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3'
 import * as config from 'config';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { Construct, IConstruct } from 'constructs';
+import { Construct } from 'constructs';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline';
@@ -17,13 +17,10 @@ export interface BuiStackProps extends cdk.StackProps {
 }
 export class BuiInfrastructureStack extends cdk.Stack {
     buiBucket: IBucket;
-    buiCodePipeline: IConstruct;
     vpc: IVpc;
 
     constructor(scope: Construct, id: string, props?: BuiStackProps) {
         super(scope, id, props);
-
-        console.log('VPC in BUIInfrastructure: ' + this.vpc);
         this.vpc = props?.vpc!;
         // Initialize BUI bucket
         this.buiBucket = new s3.Bucket(this, `BuiBucket`, {
@@ -35,7 +32,7 @@ export class BuiInfrastructureStack extends cdk.Stack {
             blockPublicAccess: new s3.BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
         });
 
-        // Create a policy statement
+        // Create BUI policy statement
         const buiPolicyStatement = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: [
@@ -67,8 +64,9 @@ export class BuiInfrastructureStack extends cdk.Stack {
         // Creating source action with getting the source code from github
         const sourceAction = new CodeStarConnectionsSourceAction({
             actionName: 'Source',
-            owner: 'ABRGI',
-            repo: 'nelson-bui-2.0',
+            owner: config.get('buiinfrastructurestack.owner'),
+            repo: config.get('buiinfrastructurestack.repo'),
+            branch: config.get('buiinfrastructurestack.branch'),
             output: sourceOutput,
             connectionArn: config.get('connectionarn')
         });
@@ -159,6 +157,5 @@ export class BuiInfrastructureStack extends cdk.Stack {
             ]
         });
         buiCodePipeline.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
     }
 }
