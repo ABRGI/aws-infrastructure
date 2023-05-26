@@ -12,7 +12,7 @@ import { IVpc, ISecurityGroup } from 'aws-cdk-lib/aws-ec2'
 
 
 export interface BuiStackProps extends cdk.StackProps {
-    vpc: IVpc;
+    vpc: IVpc,
     privateSG: ISecurityGroup;
 }
 export class BuiInfrastructureStack extends cdk.Stack {
@@ -157,5 +157,8 @@ export class BuiInfrastructureStack extends cdk.Stack {
             ]
         });
         buiCodePipeline.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+
+        
     }
 }

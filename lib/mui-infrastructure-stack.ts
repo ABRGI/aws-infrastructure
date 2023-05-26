@@ -11,8 +11,8 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import { ISecurityGroup, IVpc } from 'aws-cdk-lib/aws-ec2';
 
 export interface MuiStackProps extends cdk.StackProps {
-    vpc: IVpc;
-    privateSG: ISecurityGroup;
+    vpc?: IVpc;
+    privateSG?: ISecurityGroup;
 }
 export class MuiInfrastructureStack extends cdk.Stack {
     muiBucket: IBucket;

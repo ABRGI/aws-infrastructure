@@ -17,17 +17,11 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
 import { BuildEnvironmentVariableType, PipelineProject } from 'aws-cdk-lib/aws-codebuild';
-import { CodeBuildAction, CodeBuildActionType, CodeDeployEcsDeployAction, CodeStarConnectionsSourceAction, GitHubSourceAction, S3SourceAction } from 'aws-cdk-lib/aws-codepipeline-actions';
+import { CodeBuildAction, CodeBuildActionType, CodeDeployEcsDeployAction, CodeStarConnectionsSourceAction, S3SourceAction } from 'aws-cdk-lib/aws-codepipeline-actions';
 import { Artifact, ArtifactPath, Pipeline } from 'aws-cdk-lib/aws-codepipeline';
-import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, IpAddressType, ListenerCertificate, NetworkTargetGroup, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, IpAddressType, ListenerCertificate, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Port, SubnetType } from 'aws-cdk-lib/aws-ec2';
-import { Listener } from 'aws-cdk-lib/aws-globalaccelerator';
-import { AutoScalingGroup } from 'aws-cdk-lib/aws-autoscaling';
-import { Cluster, ContainerImage, DeploymentControllerType, FargateService, FargateTaskDefinition, TaskDefinition } from 'aws-cdk-lib/aws-ecs';
-import { Repository } from 'aws-cdk-lib/aws-ecr';
-import { EcsDeploymentConfig } from 'aws-cdk-lib/aws-codedeploy';
-import { ImageRepository  } from '@cloudcomponents/cdk-container-registry';
-import { PushImageProject } from '@cloudcomponents/cdk-blue-green-container-deployment';
+import { Cluster } from 'aws-cdk-lib/aws-ecs';
 import { DummyTaskDefinition } from '@cloudcomponents/cdk-blue-green-container-deployment/lib/dummy-task-definition';
 import { EcsService, EcsDeploymentGroup } from '@cloudcomponents/cdk-blue-green-container-deployment';
 import { Duration } from 'aws-cdk-lib';
@@ -41,6 +35,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
     nelsonVpc: ec2.IVpc;
     albSG: ec2.ISecurityGroup; // public security group
     fargateClusterSG: ec2.ISecurityGroup; // private security group
+    loadBalancerDnsName: string;
     
     constructor(scope: Construct, id: string, props?: VpcStackProps) {
         super(scope, id, props);
@@ -154,7 +149,9 @@ export class SaasInfrastructureStack extends cdk.Stack {
             },
             ipAddressType: IpAddressType.IPV4
         });
-        
+        console.log("ALB" + alb.loadBalancerDnsName);
+        this.loadBalancerDnsName = alb.loadBalancerDnsName;
+
         const targetGroup1 = new ApplicationTargetGroup(this, 'TG1', {
             port: 80,
             protocol: ApplicationProtocol.HTTP,
@@ -199,6 +196,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
         const ecsLogs = new  LogGroup(this, 'ECSLogGroup', {
             logGroupName: `/ecs/${config.get('environmentname')}-${config.get('saasinfrastructurestack.codebuildenvvariables.appname')}`
         });
+        ecsLogs.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         // Create ECSCluster
         const cluster = new Cluster(this, 'FargateCluster', {
