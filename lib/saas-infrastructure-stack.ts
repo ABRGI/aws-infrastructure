@@ -31,6 +31,7 @@ import { PushImageProject } from '@cloudcomponents/cdk-blue-green-container-depl
 import { DummyTaskDefinition } from '@cloudcomponents/cdk-blue-green-container-deployment/lib/dummy-task-definition';
 import { EcsService, EcsDeploymentGroup } from '@cloudcomponents/cdk-blue-green-container-deployment';
 import { Duration } from 'aws-cdk-lib';
+import { LogGroup } from 'aws-cdk-lib/aws-logs';
 
 export interface VpcStackProps extends cdk.StackProps {
     vpcname?: string
@@ -119,7 +120,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             securityGroupName: `${config.get('environmentname')}-db-sg`
           });
         for (const privateSubnet of this.nelsonVpc.privateSubnets) {
-            console.log('SG' + privateSubnet.ipv4CidrBlock);
             dbSecurityGroup.addIngressRule(ec2.Peer.ipv4(privateSubnet.ipv4CidrBlock), ec2.Port.tcp(5432), 'Receive all traffics from internet via port 443');
         }
         dbSecurityGroup.applyRemovalPolicy(config.get('defaultremovalpolicy'));
@@ -143,8 +143,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             clusterIdentifier: `${config.get('environmentname')}-saas-nelson-services-db-cluster`
         });
 
-
-
         // Create ALB
         const alb = new ApplicationLoadBalancer(this, 'ALB', {
             vpc: this.nelsonVpc,
@@ -156,14 +154,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             },
             ipAddressType: IpAddressType.IPV4
         });
-
-        // const autoScalingGroup1 = new AutoScalingGroup(this, '', {
-        //     vpc: this.nelsonVpc,
-        //     instanceType: new ec2.InstanceType()
-        // });
-        //const autoScalingGroup2 = new AutoScalingGroup();
-        // *.nelson.management
-        
         
         const targetGroup1 = new ApplicationTargetGroup(this, 'TG1', {
             port: 80,
@@ -205,24 +195,20 @@ export class SaasInfrastructureStack extends cdk.Stack {
         testListener.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         alb.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
+        // Create log group for ECS
+        const ecsLogs = new  LogGroup(this, 'ECSLogGroup', {
+            logGroupName: `/ecs/${config.get('environmentname')}-${config.get('saasinfrastructurestack.codebuildenvvariables.appname')}`
+        });
+
         // Create ECSCluster
         const cluster = new Cluster(this, 'FargateCluster', {
             clusterName: config.get('environmentname'),
             vpc: this.nelsonVpc
         });
 
-        // This task definition will be replaced by codedeploy in Codepipeline
-        // const taskDefition = new FargateTaskDefinition(this, 'TD', {
-        // });
-        // taskDefition.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         const taskDefinition = new DummyTaskDefinition(this, 'DummyTaskDefinition', {
             image: 'nginx',
             family: 'blue-green'
-        });
-
-        const repository = new Repository(this, 'ECR', {
-            repositoryName: 'test/nelson',
-            removalPolicy: config.get('defaultremovalpolicy')
         });
 
         const ecsService = new EcsService(this, 'EcsService', {
@@ -231,43 +217,13 @@ export class SaasInfrastructureStack extends cdk.Stack {
             desiredCount: 2,
             taskDefinition: taskDefinition,
             prodTargetGroup: targetGroup1,
-            testTargetGroup: targetGroup2
+            testTargetGroup: targetGroup2,
+
         });
 
         ecsService.connections.allowFrom(alb, Port.tcp(443));
         ecsService.connections.allowFrom(alb, Port.tcp(8443));
-
-        // const container = taskDefition.addContainer('Container', {
-        //     image: ContainerImage.fromEcrRepository(repository),
-        //     portMappings: [
-        //         {
-        //             containerPort: 80,
-        //             hostPort: 80
-        //         }
-        //     ]
-        // });
         cluster.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
-        // const fargateService = new FargateService(this, 'FargateService', {
-        //     cluster: cluster,
-        //     taskDefinition: taskDefition,
-        //     assignPublicIp: false,
-        //     securityGroups: [this.fargateClusterSG],
-        //     serviceName: 'nelson',
-        //     vpcSubnets: {
-        //         subnetType: SubnetType.PRIVATE_WITH_EGRESS
-        //     },
-        //     deploymentController: {
-        //         type: DeploymentControllerType.CODE_DEPLOY
-        //     },
-        //     desiredCount: 2
-        // });
-        // fargateService.attachToApplicationTargetGroup(targetGroup1);
-        // fargateService.attachToApplicationTargetGroup(targetGroup2);
-        // fargateService.connections.allowFrom(alb, Port.tcp(443));
-        // fargateService.connections.allowFrom(alb, Port.tcp(8443));
-        // fargateService.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
 
         // Create code build
         const nelsonCodeBuildRole = new iam.Role(this, 'NelsonCBRole', {
@@ -429,20 +385,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             }
         });
 
-        // const deploymentGroup = new EcsDeploymentGroup(this, 'DeploymentGroup', {
-        //     deploymentGroupName: `${config.get('environmentname')}-nelson-deloyment`,
-        //     service: fargateService,
-        //     blueGreenDeploymentConfig: {
-        //         blueTargetGroup: targetGroup1,
-        //         greenTargetGroup: targetGroup2,
-        //         listener: prodLisener,
-        //         testListener: testListener
-        //     },
-        //     deploymentConfig: EcsDeploymentConfig.ALL_AT_ONCE
-        // });
-        // deploymentGroup.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
-
         const deploymentGroup = new EcsDeploymentGroup(this, 'DeploymentGroup', {
             deploymentGroupName: `${config.get('environmentname')}-nelson-deloyment`,
             ecsServices: [ecsService],
@@ -452,7 +394,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             terminationWaitTime: Duration.minutes(100),
 
         });
-        //deploymentGroup.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         const deployRole = new iam.Role(this, 'DeploymentCBRole', {
             assumedBy: new iam.ServicePrincipal('codepipeline.amazonaws.com'),
@@ -472,13 +413,11 @@ export class SaasInfrastructureStack extends cdk.Stack {
                 }
             ],
             taskDefinitionTemplateInput: nelsonDeplBuildOutput,
-            //appSpecTemplateInput: new ArtifactPath(nelsonDeplBuildOutput, 'appspec.yml').artifact,
             appSpecTemplateFile: new ArtifactPath(nelsonDeplBuildOutput, 'appspec.yml'),
             role: deployRole
             //role: iam.Role.fromRoleArn(this,  'DMRole','arn:aws:iam::459045743560:role/ecsCodeDeployRole')
         });
         
-
         const codePipelinePolicy = new iam.PolicyStatement({
             actions: [
                 'codedeploy:CreateDeployment',
