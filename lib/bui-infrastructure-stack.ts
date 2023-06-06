@@ -29,7 +29,8 @@ export class BuiInfrastructureStack extends cdk.Stack {
             publicReadAccess: config.get('buiinfrastructurestack.publicreadaccess'),
             autoDeleteObjects: true,
             //Block all public access: off
-            blockPublicAccess: new s3.BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
+            blockPublicAccess: new s3.BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false }),
+            websiteIndexDocument: "index.html"
         });
 
         // Create BUI policy statement
@@ -154,11 +155,14 @@ export class BuiInfrastructureStack extends cdk.Stack {
                     stageName: "Build",
                     actions: [buildAction]
                 }
-            ]
+            ],
+            artifactBucket: new s3.Bucket(this, 'artifactBucket', {
+                autoDeleteObjects: true,
+                bucketName: `${config.get('environmentname')}-buicodepipelineartifact`,
+                removalPolicy: config.get('defaultremovalpolicy')
+            })
         });
+        buiCodePipeline.artifactBucket.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         buiCodePipeline.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
-
-        
     }
 }

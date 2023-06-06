@@ -6,8 +6,10 @@ import { VpcInfrastructureStack } from '../lib/vpc-infrastructure-stack';
 import { SaasInfrastructureStack, VpcStackProps } from '../lib/saas-infrastructure-stack';
 import { BuiInfrastructureStack } from '../lib/bui-infrastructure-stack';
 import { NelsonManagementHostedZoneStack } from '../lib/nelson-management-hosted-zone-stack';
+import { MuiCloudFrontStack } from '../lib/mui-cloudfront-stack';
 import { BuiCloudFrontStack } from '../lib/bui-cloudfront-stack';
-import { ListenerCertificate } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { BuiHostedZoneStack } from '../lib/bui-hosted-zone-stack';
+import { MuiHostedZoneStack } from '../lib/mui-hosted-zone-stack';
 
 const app = new cdk.App();
 
@@ -25,13 +27,6 @@ if (config.get('useexistingvpc') == true && config.has('existingvpcname')) {
   vpcprops.vpc = vpcStack.nelsonVpc;
   nelsonVpc = vpcStack.nelsonVpc;
 };
-
-const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('environmentname')}HostedZoneStack`, {
-    env: {
-        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-        region: 'us-east-1' //Certificate of the hosted zone needs to be in N. Virginia. Hosted zones are global anyway
-    }
-});
 
 const saasInfrastructureStack = new SaasInfrastructureStack(app, `${config.get('environmentname')}SaasInfrastructure`, {
     env: {
@@ -60,15 +55,42 @@ const muiInfrastructureStack = new MuiInfrastructureStack(app, `${config.get('en
   privateSG: saasInfrastructureStack.fargateClusterSG
 });
 
-new BuiCloudFrontStack(app, `${config.get('environmentname')}BuiCloudFront`, {
+const buiHostedZoneStack = new BuiHostedZoneStack(app, `${config.get('environmentname')}BuiHostedZoneStack`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: 'us-east-1' //Certificate of the hosted zone needs to be in N. Virginia. Hosted zones are global anyway
+    }
+});
+
+const buiCloudFrontStack = new BuiCloudFrontStack(app, `${config.get('environmentname')}BuiCloudFront`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
     },
-    hostedZone: hostedZoneStack.hostedZone,
-    viewerAcmCertificateArn: ListenerCertificate.fromArn('arn:aws:acm:eu-central-1:459045743560:certificate/23fb79fa-0ab6-4c82-baa8-697d963ba824').certificateArn,
-    buiBucket: buiInfrastructureStack.buiBucket,
-    loadBalancerDnsName: saasInfrastructureStack.loadBalancerDnsName
+    hostedZone: buiHostedZoneStack.hostedZone,
+    viewerAcmCertificateArn: buiHostedZoneStack.domainCertificate.certificateArn,
+    buiBucketName: buiInfrastructureStack.buiBucket,
+    loadBalancerDnsName: saasInfrastructureStack.loadBalancerDnsName,
+    crossRegionReferences: true
+});
+
+const muiHostedZoneStack = new MuiHostedZoneStack(app, `${config.get('environmentname')}MuiHostedZoneStack`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: 'us-east-1' //Certificate of the hosted zone needs to be in N. Virginia. Hosted zones are global anyway
+    }
+});
+
+const muiCloudFrontStack = new MuiCloudFrontStack(app, `${config.get('environmentname')}MuiCloudFront`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    },
+    hostedZone: muiHostedZoneStack.hostedZone,
+    viewerAcmCertificateArn: muiHostedZoneStack.domainCertificate.certificateArn,
+    muiBucketName: muiInfrastructureStack.muiBucket,
+    loadBalancerDnsName: saasInfrastructureStack.loadBalancerDnsName,
+    crossRegionReferences: true
 });
 
 

@@ -1,36 +1,33 @@
 import * as cdk from 'aws-cdk-lib';
 import { CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, OriginProtocolPolicy, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
-import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3';
+import { IBucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { Duration } from 'aws-cdk-lib';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as config from 'config';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
-
-export interface BuiCloudFrontStackProps extends cdk.StackProps {
+export interface MuiCloudFrontStackProps extends cdk.StackProps {
     hostedZone: IHostedZone,
     viewerAcmCertificateArn: string,
-    buiBucketName: IBucket,
+    muiBucketName: IBucket,
     loadBalancerDnsName: string;
 }
 
-export class BuiCloudFrontStack extends cdk.Stack {
+export class MuiCloudFrontStack extends cdk.Stack {
 
-    constructor(scope: Construct, id: string, props: BuiCloudFrontStackProps) {
+    constructor(scope: Construct, id: string, props: MuiCloudFrontStackProps) {
         super(scope, id, props);
-        const certificate = Certificate.fromCertificateArn(this, 'NelsonBuiDomainCertificate', props.viewerAcmCertificateArn);
+        const certificate = Certificate.fromCertificateArn(this, 'NelsonMuiDomainCertificate', props.viewerAcmCertificateArn);
         //Step 1: Create cloudfront distribution
-        console.log('BUI BUCKET: ' + props.buiBucketName);
-        console.log(this.region);
-        const nelsonCfDistribution = new CloudFrontWebDistribution(this, 'NelsonBuiCFDistribution', {
-            comment: `${config.get('buihostedzonestack.domain')}`,
+        const nelsonCfDistribution = new CloudFrontWebDistribution(this, 'NelsonMuiCFDistribution', {
+            comment: props.muiBucketName.bucketName,
             originConfigs: [
                 //S3 redirect for static website
                 {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
-                        domainName: `${config.get('buiinfrastructurestack.bucketname')}.s3-website.${this.region}.amazonaws.com`,
+                        domainName: `${config.get('muiinfrastructurestack.bucketname')}.s3-website.${this.region}.amazonaws.com`,
                         originProtocolPolicy: OriginProtocolPolicy.HTTP_ONLY
                     },
                     behaviors: [
@@ -38,9 +35,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                         {
                             isDefaultBehavior: true,
                             allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
-                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                            
-                            
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
                         }
                     ]
                 },
@@ -108,10 +103,10 @@ export class BuiCloudFrontStack extends cdk.Stack {
                             allowedMethods: CloudFrontAllowedMethods.ALL,
                             viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
                         }
-                    ],
+                    ]
                     
                 },
-                //tenants
+                //tenant configuration files
                 {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
@@ -163,16 +158,16 @@ export class BuiCloudFrontStack extends cdk.Stack {
                 }
             ],
             viewerCertificate: ViewerCertificate.fromAcmCertificate(certificate, {
-                aliases: [props.buiBucketName.bucketName]
+                aliases: [props.muiBucketName.bucketName]
             })
         });
         nelsonCfDistribution.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-         //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
-         new ARecord(this, 'NelsonBuiCloudFrontARecord', {
+        //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
+        new ARecord(this, 'NelsonMuiCloudFrontARecord', {
             zone: props.hostedZone,
-            recordName: String(config.get('buihostedzonestack.domain')).split(`.${config.get('buihostedzonestack.hostedzone')}`)[0],  //Get only the subdomain value
-            comment: props.buiBucketName.bucketName,
+            recordName: String(config.get('muihostedzonestack.domain')).split(`.${config.get('muihostedzonestack.hostedzone')}`)[0],  //Get only the subdomain value
+            comment: config.get('muihostedzonestack.domain'),
             ttl: Duration.minutes(5),
             target: RecordTarget.fromAlias(new CloudFrontTarget(nelsonCfDistribution))
         }).applyRemovalPolicy(config.get('defaultremovalpolicy'));

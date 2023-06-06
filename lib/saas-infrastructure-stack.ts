@@ -121,14 +121,14 @@ export class SaasInfrastructureStack extends cdk.Stack {
 
         // Create nelson DB
         const nelsonDB = new rds.DatabaseCluster(this, 'Database', {
-            engine: rds.DatabaseClusterEngine.auroraPostgres({version: rds.AuroraPostgresEngineVersion.VER_13_7}),
+            engine: rds.DatabaseClusterEngine.auroraPostgres({version: rds.AuroraPostgresEngineVersion.VER_13_7}), 
             instanceProps: {
                 vpc: this.nelsonVpc,
                 vpcSubnets: {
                     subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
                 },
                 securityGroups: [dbSecurityGroup],
-                publiclyAccessible: false
+                publiclyAccessible: false,
             },
             defaultDatabaseName: 'nelson',
             instances: 1,
@@ -149,7 +149,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             },
             ipAddressType: IpAddressType.IPV4
         });
-        console.log("ALB" + alb.loadBalancerDnsName);
         this.loadBalancerDnsName = alb.loadBalancerDnsName;
 
         const targetGroup1 = new ApplicationTargetGroup(this, 'TG1', {
@@ -159,18 +158,26 @@ export class SaasInfrastructureStack extends cdk.Stack {
             vpc: this.nelsonVpc,
             targetGroupName: `${config.get('environmentname')}-tg-01`,
             healthCheck: {
-                path: '/status'
+                path: '/status',
+                timeout: Duration.seconds(60),
+                interval: Duration.seconds(120)
+
             }
         });
         const prodLisener = alb.addListener('ProdListener', {
             port: 443,
-            certificates: [ListenerCertificate.fromArn('arn:aws:acm:eu-central-1:459045743560:certificate/23fb79fa-0ab6-4c82-baa8-697d963ba824')],
             protocol: ApplicationProtocol.HTTPS,
             defaultTargetGroups: [targetGroup1]
+            
         });
+        if (config.get('saasinfrastructurestack.buidomaincertificatearn')) {
+            prodLisener.addCertificates('BuiDomainCertificate', [ListenerCertificate.fromArn(config.get('saasinfrastructurestack.buidomaincertificatearn'))]);
+        }
+        if (config.get('saasinfrastructurestack.muidomaincertificatearn')) {
+            prodLisener.addCertificates('MuiDomainCertificate', [ListenerCertificate.fromArn(config.get('saasinfrastructurestack.muidomaincertificatearn'))]);
+        }
         prodLisener.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         
-
         const targetGroup2 = new ApplicationTargetGroup(this, 'TG2', {
             port: 80,
             protocol: ApplicationProtocol.HTTP,
@@ -178,17 +185,23 @@ export class SaasInfrastructureStack extends cdk.Stack {
             vpc: this.nelsonVpc,
             targetGroupName: `${config.get('environmentname')}-tg-02`,
             healthCheck: {
-                path: '/status'
+                path: '/status',
+                timeout: Duration.seconds(60),
+                interval: Duration.seconds(120)
             }
         });
 
         const testListener = alb.addListener('Testistener', {
             port: 8443,
-            certificates: [ListenerCertificate.fromArn('arn:aws:acm:eu-central-1:459045743560:certificate/23fb79fa-0ab6-4c82-baa8-697d963ba824')],
             protocol: ApplicationProtocol.HTTPS,
-            defaultTargetGroups: [targetGroup2],
+            defaultTargetGroups: [targetGroup2]
         });
-
+        if (config.get('saasinfrastructurestack.buidomaincertificatearn')) {
+            testListener.addCertificates('BuiDomainCertificate', [ListenerCertificate.fromArn(config.get('saasinfrastructurestack.buidomaincertificatearn'))]);
+        }
+        if (config.get('saasinfrastructurestack.muidomaincertificatearn')) {
+            testListener.addCertificates('MuiDomainCertificate', [ListenerCertificate.fromArn(config.get('saasinfrastructurestack.muidomaincertificatearn'))]);
+        }
         testListener.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         alb.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
@@ -204,6 +217,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             vpc: this.nelsonVpc
         });
 
+        // Dummy task definition first
         const taskDefinition = new DummyTaskDefinition(this, 'DummyTaskDefinition', {
             image: 'nginx',
             family: 'blue-green'
@@ -215,37 +229,45 @@ export class SaasInfrastructureStack extends cdk.Stack {
             desiredCount: 2,
             taskDefinition: taskDefinition,
             prodTargetGroup: targetGroup1,
-            testTargetGroup: targetGroup2,
+            testTargetGroup: targetGroup2
 
         });
-
-        ecsService.connections.allowFrom(alb, Port.tcp(443));
-        ecsService.connections.allowFrom(alb, Port.tcp(8443));
+        const portProps: ec2.PortProps = {
+            protocol: ec2.Protocol.TCP,
+            stringRepresentation: '',
+            fromPort: 0,
+            toPort: 65535
+        }; 
+        ecsService.connections.allowFrom(this.albSG, new ec2.Port(portProps)); 
         cluster.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         // Create code build
         const nelsonCodeBuildRole = new iam.Role(this, 'NelsonCBRole', {
             roleName: `codebuild-${config.get('environmentname')}-nelson-service-role`,
-            assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com')
+            assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
+            managedPolicies: [
+                iam.ManagedPolicy.fromAwsManagedPolicyName('SecretsManagerReadWrite'),
+                iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess')
+            ]
         });
-        nelsonCodeBuildRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('SecretsManagerReadWrite'));
-        nelsonCodeBuildRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'));
+        //nelsonCodeBuildRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('SecretsManagerReadWrite'));
+        //nelsonCodeBuildRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'));
         nelsonCodeBuildRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         const nelsonCodeBuildSource = codebuild.Source.gitHub({
             owner: 'ABRGI',
-            repo: 'nelson',
-            branchOrRef: 'feature/test-exhibition-env',
+            repo: config.get('saasinfrastructurestack.nelsonrepo'),
+            branchOrRef: '',
             webhook: true,
             webhookTriggersBatchBuild: false,
             webhookFilters: [
                 codebuild.FilterGroup
                     .inEventOf(codebuild.EventAction.PUSH)
-                    .andBranchIs('feature/test-exhibition-env'),
+                    .andBranchIs(config.get('saasinfrastructurestack.nelsonbranch')),
                 codebuild.FilterGroup
                     .inEventOf(codebuild.EventAction.PULL_REQUEST_MERGED)
                     .andHeadRefIs('^refs/heads/*$')
-                    .andBaseRefIs('^refs/heads/feature/test-exhibition-env$')
+                    .andBaseRefIs(`^refs/heads/${config.get('saasinfrastructurestack.nelsonbranch')}$`)
             ],
         });
 
@@ -258,6 +280,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             path: config.get('environmentname'),
             encryption: true
         });
+
         const nelsonCodeBuildProject = new codebuild.Project(this, 'NelsonCodeBuildProject', {
             buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.yml'),
             artifacts: nelsonCodeBuildArtifacts,
@@ -314,9 +337,9 @@ export class SaasInfrastructureStack extends cdk.Stack {
 
         const nelsonDeplSourceAction = new CodeStarConnectionsSourceAction({
             actionName: 'Source',
-            owner: 'ABRGI',
-            repo: 'nelson-deployment',
-            branch: 'feature/test-exhibition-env',
+            owner: config.get('saasinfrastructurestack.owner'),
+            repo: config.get('saasinfrastructurestack.nelsondeploymentrepo'),
+            branch: config.get('saasinfrastructurestack.nelsondeploymentbranch'),
             output: nelsonDeplSourceOutput,
             connectionArn: config.get('connectionarn')
         });
@@ -388,7 +411,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             targetGroups: [targetGroup1, targetGroup2],
             prodTrafficListener: prodLisener,
             testTrafficListener: testListener,
-            terminationWaitTime: Duration.minutes(100),
+            terminationWaitTime: Duration.minutes(100)
 
         });
 
@@ -482,8 +505,12 @@ export class SaasInfrastructureStack extends cdk.Stack {
                     stageName: 'Deploy',
                     actions: [deployAction]
                 }
-                // Add Deploy state
-            ]
+            ],
+            artifactBucket: new Bucket(this, 'artifactBucket', {
+                autoDeleteObjects: true,
+                bucketName: `${config.get('environmentname')}-nelsoncodepipelineartifact`,
+                removalPolicy: config.get('defaultremovalpolicy')
+            })
         });
         const pipelineCfn = nelsonCodePipelines.node.defaultChild as cdk.CfnResource;
         // addDeletionOverride  removes the property from the cloudformation itself
@@ -491,6 +518,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
         pipelineCfn.addDeletionOverride("Properties.Stages.1.Actions.0.RoleArn");
         pipelineCfn.addDeletionOverride("Properties.Stages.2.Actions.0.RoleArn");
         pipelineCfn.addDeletionOverride("Properties.Stages.3.Actions.0.RoleArn");
+        nelsonCodePipelines.artifactBucket.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         nelsonCodePipelines.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
     }

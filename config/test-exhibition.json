@@ -39,26 +39,26 @@
     "fargateclustersgid": "",
     "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
     "buiinfrastructurestack": {
-        "bucketname": "test-exhibitioncourt.bookn.io",
+        "bucketname": "test-exhibition.bookn.io",
         "useexistingbuibucket": false,
         "publicreadaccess": true,
-        "hotelbuild": "salora",
+        "hotelbuild": "exhibition",
         "locales": "fi, en, et, ru, sv",
-        "hotelchainname": "SaloHotels",
+        "hotelchainname": "ECHotels",
         "releaseversion": "1.0",
         "repo": "nelson-bui-2.0",
-        "branch": "develop",
+        "branch": "feature/test-exhibition-env",
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
-        "bucketname": "test-exhibitioncourt.nelson.management",
+        "bucketname": "test-exhibition.nelson.management",
         "useexistingmuibucket": false,
         "publicreadaccess": true,
         "rootfolder": "management",
-        "hotelbuild": "salora",
+        "hotelbuild": "exhibition",
         "releaseversion": "2.0",
         "repo": "nelson-management-ui",
-        "branch": "develop",
+        "branch": "feature/test-exhibition-env",
         "owner": "ABRGI"
     },
     "tags": {
@@ -92,6 +92,36 @@
             "serviceport": "8080",
             "cpu": "512",
             "memory": "2048"
-        }
+        },
+        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/41ef7c6e-f3f4-473b-9b73-4d3110f60575",
+        "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
+        "nelsonrepo": "nelson",
+        "nelsondeploymentrepo": "nelson-deployment",
+        "nelsonbranch": "feature/SAAS-621-setup-exhibition-env",
+        "nelsondeploymentbranch": "feature/test-exhibition-env",
+        "owner": "ABRGI"
+    },
+    "buihostedzonestack": {
+        "hostedzone": "bookn.io",
+        "createnewsubdomaincertificate": true,
+        "createnelsonmanagementcloudfrontentry": true,
+        "domain": "test-exhibition.bookn.io"
+    },
+    "muihostedzonestack": {
+        "hostedzone": "nelson.management",
+        "createnewsubdomaincertificate": true,
+        "createnelsonmanagementcloudfrontentry": true,
+        "domain": "test-exhibition.nelson.management"
+    },
+    "tenantproperties": {
+        "bucketname": "nelson-tenant-properties.s3.eu-central-1.amazonaws.com",
+        "originpath": "/ECHotels/test-exhibition",
+        "pathpattern": "/*-config.json"
+    },
+    "nelsonmanagementservice": {
+        "userserviceapigatewayurl": "ie3mgiz5s9.execute-api.eu-central-1.amazonaws.com",
+        "userserviceoriginpath": "/Prod",
+        "tenantserviceapigatewayurl": "t3n05vum9h.execute-api.eu-central-1.amazonaws.com",
+        "tenantserviceoriginpath": "/Prod"
     }
 }

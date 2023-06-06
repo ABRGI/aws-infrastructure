@@ -28,7 +28,8 @@ export class MuiInfrastructureStack extends cdk.Stack {
             publicReadAccess: config.get('muiinfrastructurestack.publicreadaccess'),
             autoDeleteObjects: true,
             //Block all public access: off
-            blockPublicAccess: new s3.BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false })
+            blockPublicAccess: new s3.BlockPublicAccess({ blockPublicAcls: false, blockPublicPolicy: false, ignorePublicAcls: false, restrictPublicBuckets: false }),
+            websiteIndexDocument: "index.html"
         });
         this.muiBucket.grantPublicAccess();
 
@@ -90,7 +91,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
             projectName: `${config.get('environmentname')}-nelson-management-ui`,
             buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.yml'),
             environment: {
-                buildImage: codebuild.LinuxBuildImage.STANDARD_5_0,
+                buildImage: codebuild.LinuxBuildImage.STANDARD_3_0,
                 privileged: true,
                 computeType: codebuild.ComputeType.MEDIUM,
             },
@@ -141,8 +142,14 @@ export class MuiInfrastructureStack extends cdk.Stack {
                     stageName: "Build",
                     actions: [buildAction]
                 }
-            ]
+            ],
+            artifactBucket: new s3.Bucket(this, 'artifactBucket', {
+                autoDeleteObjects: true,
+                bucketName: `${config.get('environmentname')}-muicodepipelineartifact`,
+                removalPolicy: config.get('defaultremovalpolicy')
+            })
         });
+        buiCodePipeline.artifactBucket.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         buiCodePipeline.applyRemovalPolicy(config.get('defaultremovalpolicy'));
     }
 }  
