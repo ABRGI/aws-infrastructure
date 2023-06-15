@@ -20,7 +20,7 @@ import { BuildEnvironmentVariableType, PipelineProject } from 'aws-cdk-lib/aws-c
 import { CodeBuildAction, CodeBuildActionType, CodeDeployEcsDeployAction, CodeStarConnectionsSourceAction, S3SourceAction } from 'aws-cdk-lib/aws-codepipeline-actions';
 import { Artifact, ArtifactPath, Pipeline } from 'aws-cdk-lib/aws-codepipeline';
 import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, IpAddressType, ListenerCertificate, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Port, SubnetType } from 'aws-cdk-lib/aws-ec2';
+import { SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { Cluster } from 'aws-cdk-lib/aws-ecs';
 import { DummyTaskDefinition } from '@cloudcomponents/cdk-blue-green-container-deployment/lib/dummy-task-definition';
 import { EcsService, EcsDeploymentGroup } from '@cloudcomponents/cdk-blue-green-container-deployment';
@@ -128,7 +128,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
                     subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
                 },
                 securityGroups: [dbSecurityGroup],
-                publiclyAccessible: false,
+                publiclyAccessible: false
             },
             defaultDatabaseName: 'nelson',
             instances: 1,
@@ -250,8 +250,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
                 iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess')
             ]
         });
-        //nelsonCodeBuildRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('SecretsManagerReadWrite'));
-        //nelsonCodeBuildRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'));
         nelsonCodeBuildRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         const nelsonCodeBuildSource = codebuild.Source.gitHub({

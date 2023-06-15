@@ -123,5 +123,10 @@
         "userserviceoriginpath": "/Prod",
         "tenantserviceapigatewayurl": "t3n05vum9h.execute-api.eu-central-1.amazonaws.com",
         "tenantserviceoriginpath": "/Prod"
+    },
+    "npriceinfrastructurestack": {
+        "issupportednprice": "true",
+        "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
+        "region": "eu-central-1"
     }
 }
