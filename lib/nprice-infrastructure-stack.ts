@@ -142,7 +142,7 @@ export class NpriceInfrastructureStack extends cdk.Stack {
         const npriceCoreStarerScript = new lambda.Function(this, 'NpriceCoreStarerScript', {
             runtime: lambda.Runtime.PYTHON_3_7,
             architecture: lambda.Architecture.X86_64,
-            handler: 'lambda_function',
+            handler: 'lambda_function.lambda_handler',
             code: lambda.Code.fromAsset(path.join(__dirname, "/../assets/nprice-core")),
             timeout: cdk.Duration.seconds(3),
             description: 'This fucntion checks that the nPrice core is stopped and starts it, otherwise it will sen a notification.',
