@@ -108,36 +108,81 @@ export class SaasInfrastructureStack extends cdk.Stack {
             this.fargateClusterSG = fargateClusterSG;
         }
 
-        const dbSecurityGroup = new ec2.SecurityGroup(this, "dbSecurityGroup", {
-            vpc: this.nelsonVpc,
-            allowAllOutbound: true,
-            description: "Security group for RDS",
-            securityGroupName: `${config.get('environmentname')}-db-sg`
-          });
-        for (const privateSubnet of this.nelsonVpc.privateSubnets) {
-            dbSecurityGroup.addIngressRule(ec2.Peer.ipv4(privateSubnet.ipv4CidrBlock), ec2.Port.tcp(5432), 'Receive all traffics from internet via port 443');
-        }
-        dbSecurityGroup.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
-        // Create nelson DB
-        const nelsonDB = new rds.DatabaseCluster(this, 'Database', {
-            engine: rds.DatabaseClusterEngine.auroraPostgres({version: rds.AuroraPostgresEngineVersion.VER_13_7}), 
-            instanceProps: {
+        if (!config.get('saasinfrastructurestack.useexistingdb')) {
+            const dbSecurityGroup = new ec2.SecurityGroup(this, "dbSecurityGroup", {
                 vpc: this.nelsonVpc,
-                vpcSubnets: {
-                    subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
+                allowAllOutbound: true,
+                description: "Security group for RDS",
+                securityGroupName: `${config.get('environmentname')}-db-sg`
+              });
+            for (const privateSubnet of this.nelsonVpc.privateSubnets) {
+                dbSecurityGroup.addIngressRule(ec2.Peer.ipv4(privateSubnet.ipv4CidrBlock), ec2.Port.tcp(5432), 'Receive all traffics from internet via port 443');
+            }
+            dbSecurityGroup.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            cdk.Aspects.of(dbSecurityGroup).add(
+                new cdk.Tag('nelson:client', 'saas')
+            );
+            cdk.Aspects.of(dbSecurityGroup).add(
+                new cdk.Tag('nelson:role', 'service')
+            );
+            cdk.Aspects.of(dbSecurityGroup).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+            cdk.Aspects.of(dbSecurityGroup).add(
+                new cdk.Tag('Name', `${config.get('environmentname')}-db-sg`)
+            );
+    
+            // Create nelson DB
+            const nelsonDB = new rds.DatabaseCluster(this, 'Database', {
+                engine: rds.DatabaseClusterEngine.auroraPostgres({version: rds.AuroraPostgresEngineVersion.VER_13_7}), 
+                instanceProps: {
+                    vpc: this.nelsonVpc,
+                    vpcSubnets: {
+                        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
+                    },
+                    securityGroups: [dbSecurityGroup],
+                    publiclyAccessible: false
                 },
-                securityGroups: [dbSecurityGroup],
-                publiclyAccessible: false
-            },
-            defaultDatabaseName: 'nelson',
-            instances: 1,
-            instanceIdentifierBase: `${config.get('environmentname')}-saas-nelson-services-db-instance-`,
-            credentials: rds.Credentials.fromSecret(Secret.fromSecretNameV2(this, 'DBCredential', 'cdkRDSCredential')),
-            removalPolicy: config.get('defaultremovalpolicy'),
-            clusterIdentifier: `${config.get('environmentname')}-saas-nelson-services-db-cluster`
-        });
+                defaultDatabaseName: 'nelson',
+                instances: 1,
+                instanceIdentifierBase: `${config.get('environmentname')}-saas-nelson-services-db-instance-`,
+                credentials: rds.Credentials.fromSecret(Secret.fromSecretNameV2(this, 'DBCredential', 'cdkRDSCredential')),
+                removalPolicy: config.get('defaultremovalpolicy'),
+                clusterIdentifier: `${config.get('environmentname')}-saas-nelson-services-db-cluster`
+            });
+            cdk.Aspects.of(nelsonDB).add(
+                new cdk.Tag('nelson:client', 'saas')
+            );
+            cdk.Aspects.of(nelsonDB).add(
+                new cdk.Tag('nelson:role', 'service')
+            );
+            cdk.Aspects.of(nelsonDB).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+            cdk.Aspects.of(nelsonDB).add(
+                new cdk.Tag('Name', `${config.get('environmentname')}-rds`)
+            );
+    
+        }
 
+        const cfnVPCPeeringConn = new ec2.CfnVPCPeeringConnection(this, 'MyPR', {
+            vpcId: this.nelsonVpc.vpcId,
+            peerVpcId: config.get('saasinfrastructurestack.existingdbvpcid')
+        });
+        cfnVPCPeeringConn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(cfnVPCPeeringConn).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(cfnVPCPeeringConn).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(cfnVPCPeeringConn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(cfnVPCPeeringConn).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-vpc-to-db`)
+        );
+        
         // Create ALB
         const alb = new ApplicationLoadBalancer(this, 'ALB', {
             vpc: this.nelsonVpc,
@@ -150,6 +195,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
             ipAddressType: IpAddressType.IPV4
         });
         this.loadBalancerDnsName = alb.loadBalancerDnsName;
+        cdk.Aspects.of(alb).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(alb).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(alb).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(alb).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-alb`)
+        );
 
         const targetGroup1 = new ApplicationTargetGroup(this, 'TG1', {
             port: 80,
@@ -164,6 +221,19 @@ export class SaasInfrastructureStack extends cdk.Stack {
 
             }
         });
+        cdk.Aspects.of(targetGroup1).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(targetGroup1).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(targetGroup1).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(targetGroup1).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-target-group-01`)
+        );
+
         const prodLisener = alb.addListener('ProdListener', {
             port: 443,
             protocol: ApplicationProtocol.HTTPS,
@@ -176,6 +246,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
         if (config.get('saasinfrastructurestack.muidomaincertificatearn')) {
             prodLisener.addCertificates('MuiDomainCertificate', [ListenerCertificate.fromArn(config.get('saasinfrastructurestack.muidomaincertificatearn'))]);
         }
+        cdk.Aspects.of(prodLisener).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(prodLisener).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(prodLisener).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(prodLisener).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-prod-listener`)
+        );
         prodLisener.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         
         const targetGroup2 = new ApplicationTargetGroup(this, 'TG2', {
@@ -190,6 +272,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
                 interval: Duration.seconds(120)
             }
         });
+        cdk.Aspects.of(targetGroup2).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(targetGroup2).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(targetGroup2).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(targetGroup2).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-target-group-02`)
+        );
 
         const testListener = alb.addListener('Testistener', {
             port: 8443,
@@ -204,24 +298,72 @@ export class SaasInfrastructureStack extends cdk.Stack {
         }
         testListener.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         alb.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(testListener).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(testListener).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(testListener).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(testListener).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-test-listener`)
+        );
 
         // Create log group for ECS
         const ecsLogs = new  LogGroup(this, 'ECSLogGroup', {
             logGroupName: `/ecs/${config.get('environmentname')}-${config.get('saasinfrastructurestack.codebuildenvvariables.appname')}`
         });
         ecsLogs.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(ecsLogs).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(ecsLogs).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(ecsLogs).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(ecsLogs).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-ecs-log-group`)
+        );
 
         // Create ECSCluster
         const cluster = new Cluster(this, 'FargateCluster', {
             clusterName: config.get('environmentname'),
             vpc: this.nelsonVpc
         });
+        cdk.Aspects.of(cluster).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(cluster).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(cluster).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(cluster).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-ecs-cluster`)
+        );
 
         // Dummy task definition first
         const taskDefinition = new DummyTaskDefinition(this, 'DummyTaskDefinition', {
             image: 'nginx',
             family: 'blue-green'
         });
+        cdk.Aspects.of(taskDefinition).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(taskDefinition).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(taskDefinition).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(taskDefinition).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-task-definition`)
+        );
 
         const ecsService = new EcsService(this, 'EcsService', {
             cluster: cluster,
@@ -232,6 +374,19 @@ export class SaasInfrastructureStack extends cdk.Stack {
             testTargetGroup: targetGroup2
 
         });
+        cdk.Aspects.of(ecsService).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(ecsService).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(ecsService).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(ecsService).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-ecs-service`)
+        );
+
         const portProps: ec2.PortProps = {
             protocol: ec2.Protocol.TCP,
             stringRepresentation: '',
@@ -251,6 +406,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
             ]
         });
         nelsonCodeBuildRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(nelsonCodeBuildRole).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(nelsonCodeBuildRole).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(nelsonCodeBuildRole).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(nelsonCodeBuildRole).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nelson-codebuild-role`)
+        );
 
         const nelsonCodeBuildSource = codebuild.Source.gitHub({
             owner: 'ABRGI',
@@ -320,6 +487,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
             }
         });
         nelsonCodeBuildProject.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(nelsonCodeBuildProject).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(nelsonCodeBuildProject).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(nelsonCodeBuildProject).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(nelsonCodeBuildProject).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nelson-codebuild`)
+        );
 
         // Create code pipelines
         const nelsonSourceOutput = new Artifact('nelson');
@@ -349,6 +528,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
         nelsonDeplCodeBuildRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('SecretsManagerReadWrite'));
         nelsonDeplCodeBuildRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryFullAccess'));
         nelsonDeplCodeBuildRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(nelsonDeplCodeBuildRole).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(nelsonDeplCodeBuildRole).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(nelsonDeplCodeBuildRole).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(nelsonDeplCodeBuildRole).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nelson-deployment-cb-role`)
+        );
 
         const nelsonDeploymentCodeBuild = new PipelineProject(this, 'NelsonDeploymentCodeBuildProject', {
             projectName: `${config.get('environmentname')}-nelson-deployment`,
@@ -366,6 +557,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
             securityGroups: [this.fargateClusterSG]
         });
         nelsonDeploymentCodeBuild.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(nelsonDeploymentCodeBuild).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(nelsonDeploymentCodeBuild).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(nelsonDeploymentCodeBuild).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(nelsonDeploymentCodeBuild).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nelson-deployment-cb`)
+        );
 
         const nelsonDeplBuildOutput = new Artifact('NelsonDeploymentBuildOutput');
         const nelsonDeplBuildAction = new CodeBuildAction({
@@ -420,6 +623,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
         deployRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AWSCodeDeployRoleForECS'));
         deployRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AWSCodeDeployRoleForECSLimited'));
         deployRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(deployRole).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(deployRole).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(deployRole).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(deployRole).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nelson-cd-role`)
+        );
 
         const deployAction = new CodeDeployEcsDeployAction({
             actionName: 'Deploy',
@@ -486,6 +701,18 @@ export class SaasInfrastructureStack extends cdk.Stack {
         pipeLineRole.addToPolicy(codePipelinePolicy);
         pipeLineRole.addToPolicy(codePipeLineIAMPolicy);
         pipeLineRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(pipeLineRole).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(pipeLineRole).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(pipeLineRole).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(pipeLineRole).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nelson-codepipeline-role`)
+        );
 
         const nelsonCodePipelines = new Pipeline(this, 'NelsonCodePipeline', {
             role: pipeLineRole,
@@ -518,6 +745,17 @@ export class SaasInfrastructureStack extends cdk.Stack {
         pipelineCfn.addDeletionOverride("Properties.Stages.3.Actions.0.RoleArn");
         nelsonCodePipelines.artifactBucket.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         nelsonCodePipelines.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-
+        cdk.Aspects.of(nelsonCodePipelines).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(nelsonCodePipelines).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(nelsonCodePipelines).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(nelsonCodePipelines).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nelson-codepipeline`)
+        );
     }
 }

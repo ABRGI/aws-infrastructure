@@ -41,7 +41,6 @@ export class BuiInfrastructureStack extends cdk.Stack {
             ],
             resources: [`${this.buiBucket.bucketArn}/*`],
         });
-
         // Add the policy statement for the bucket
         this.buiBucket.addToResourcePolicy(buiPolicyStatement);
 
@@ -55,7 +54,6 @@ export class BuiInfrastructureStack extends cdk.Stack {
         cdk.Aspects.of(this.buiBucket).add(
             new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
         );
-
 
         // Create BUI codepipeline steps
         // Declare sourceOuput and buildOutput to store the artifacts of source and build states
@@ -95,6 +93,18 @@ export class BuiInfrastructureStack extends cdk.Stack {
         // Add BUI custom policy for role
         buiCodeBuildRole.addToPolicy(buiCodeBuildS3Policy);
         buiCodeBuildRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(buiCodeBuildRole).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(buiCodeBuildRole).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(buiCodeBuildRole).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(buiCodeBuildRole).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-bui2-codebuild-role`)
+        );
 
         // Create codebuildproject to build and upload static files to S3 bucket
         const buiCodeBuildProject = new PipelineProject(this, `BUICodeBuild`, {
@@ -109,11 +119,22 @@ export class BuiInfrastructureStack extends cdk.Stack {
             vpc: this.vpc,
             subnetSelection: {
                 subnets: this.vpc.privateSubnets
-            },
-            //securityGroups: [SecurityGroup.fromLookupByName(this, 'SG', `${config.get('environmentname')}-fargate-cluster-sg`, this.vpc as Vpc)]
+            }
         });
         // Add removal policy for codebuild
         buiCodeBuildProject.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(buiCodeBuildProject).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(buiCodeBuildProject).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(buiCodeBuildProject).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(buiCodeBuildProject).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-bui2-codebuild`)
+        );
         
         const buildAction = new CodeBuildAction({
             actionName: "Build",
@@ -164,5 +185,17 @@ export class BuiInfrastructureStack extends cdk.Stack {
         });
         buiCodePipeline.artifactBucket.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         buiCodePipeline.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(buiCodePipeline).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(buiCodePipeline).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(buiCodePipeline).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(buiCodePipeline).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-bui2-codepipeline`)
+        );
     }
 }

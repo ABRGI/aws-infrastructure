@@ -99,7 +99,9 @@
         "nelsondeploymentrepo": "nelson-deployment",
         "nelsonbranch": "feature/SAAS-621-setup-exhibition-env",
         "nelsondeploymentbranch": "feature/test-exhibition-env",
-        "owner": "ABRGI"
+        "owner": "ABRGI",
+        "useexistingdb": false,
+        "existingdbvpcid": ""
     },
     "buihostedzonestack": {
         "hostedzone": "bookn.io",

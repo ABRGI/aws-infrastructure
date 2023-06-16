@@ -44,9 +44,6 @@ export class MuiInfrastructureStack extends cdk.Stack {
             new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
         );
 
-
-
-
         // Create MUI codepipeline steps
         // Declare sourceOuput and buildOutput to store the artifacts of source and build states
         const sourceOutput = new Artifact('SourceOutput');
@@ -85,6 +82,18 @@ export class MuiInfrastructureStack extends cdk.Stack {
         // Add BUI custom policy for role
         muiCodeBuildRole.addToPolicy(muiCodeBuildS3Policy);
         muiCodeBuildRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(muiCodeBuildRole).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(muiCodeBuildRole).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(muiCodeBuildRole).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(muiCodeBuildRole).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-mui-codebuild-role`)
+        );
 
         // Create codebuildproject to build and upload static files to S3 bucket
         const muiCodeBuildProject = new PipelineProject(this, `MUICodeBuild`, {
@@ -99,11 +108,22 @@ export class MuiInfrastructureStack extends cdk.Stack {
             vpc: this.vpc,
             subnetSelection: {
                 subnets: this.vpc.privateSubnets
-            },
-            //securityGroups: [SecurityGroup.fromLookupByName(this, 'SG', `${config.get('environmentname')}-fargate-cluster-sg`, this.vpc as Vpc)]
+            }
         });
         // Add removal policy for codebuild
         muiCodeBuildProject.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(muiCodeBuildProject).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(muiCodeBuildProject).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(muiCodeBuildProject).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(muiCodeBuildProject).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-mui-codebuild`)
+        );
         
         const buildAction = new CodeBuildAction({
             actionName: "Build",
@@ -131,7 +151,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
             }
         });
 
-        const buiCodePipeline = new Pipeline(this, 'CodePipelines', {
+        const muiCodePipeline = new Pipeline(this, 'CodePipelines', {
             pipelineName: `${config.get('environmentname')}-nelson-management-ui`,
             stages: [
                 {
@@ -149,7 +169,19 @@ export class MuiInfrastructureStack extends cdk.Stack {
                 removalPolicy: config.get('defaultremovalpolicy')
             })
         });
-        buiCodePipeline.artifactBucket.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-        buiCodePipeline.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        muiCodePipeline.artifactBucket.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        muiCodePipeline.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(muiCodePipeline).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(muiCodePipeline).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(muiCodePipeline).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+        cdk.Aspects.of(muiCodePipeline).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-mui-codepipeline`)
+        );
     }
 }  
