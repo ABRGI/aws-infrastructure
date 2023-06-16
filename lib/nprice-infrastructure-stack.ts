@@ -6,6 +6,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, IpAddressType, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import path = require('path');
+import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 
 export interface NpriceStackProps extends cdk.StackProps {
     vpc: IVpc;
@@ -138,9 +139,9 @@ export class NpriceInfrastructureStack extends cdk.Stack {
         });
         npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-
         const npriceCoreStarerScript = new lambda.Function(this, 'NpriceCoreStarerScript', {
             runtime: lambda.Runtime.PYTHON_3_7,
+            functionName: `${config.get('environmentname')}-nprice_core_starter_script`,
             architecture: lambda.Architecture.X86_64,
             handler: 'lambda_function.lambda_handler',
             code: lambda.Code.fromAsset(path.join(__dirname, "/../assets/nprice-core")),
@@ -154,5 +155,46 @@ export class NpriceInfrastructureStack extends cdk.Stack {
 
         });
         npriceCoreStarerScript.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(npriceCoreStarerScript).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nprice-starter-script`)
+        );
+        cdk.Aspects.of(npriceCoreStarerScript).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(npriceCoreStarerScript).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(npriceCoreStarerScript).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        const nPriceCoreStartEventTrigger = new Rule(this, 'NpriceCoreStarterRule', {
+            ruleName: `${config.get('environmentname')}-nPriceCoreStarter`,
+            description: `Event to trigger the nprice starter lambda function for ${config.get('environmentname')} environment`,
+            enabled: true,
+            schedule: Schedule.cron({
+                minute: '57',
+                hour: '*',
+                day: '*',   //Weekday can't be defined along with day. Assumed to be '?'
+                month: '*',
+                year: '*'
+            }),
+            targets: [
+                new cdk.aws_events_targets.LambdaFunction(npriceCoreStarerScript)
+            ]
+        });
+        nPriceCoreStartEventTrigger.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(nPriceCoreStartEventTrigger).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-nprice-starter-script`)
+        );
+        cdk.Aspects.of(nPriceCoreStartEventTrigger).add(
+            new cdk.Tag('nelson:client', 'saas')
+        );
+        cdk.Aspects.of(nPriceCoreStartEventTrigger).add(
+            new cdk.Tag('nelson:role', 'service')
+        );
+        cdk.Aspects.of(nPriceCoreStartEventTrigger).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
     }
 }
