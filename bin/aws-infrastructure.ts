@@ -10,24 +10,23 @@ import { MuiCloudFrontStack } from '../lib/mui-cloudfront-stack';
 import { BuiCloudFrontStack } from '../lib/bui-cloudfront-stack';
 import { BuiHostedZoneStack } from '../lib/bui-hosted-zone-stack';
 import { MuiHostedZoneStack } from '../lib/mui-hosted-zone-stack';
-import { NpriceInfrastructureStack } from '../lib/nprice-infrastructure-stack';
-import { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { ClientWebsiteStack } from '../lib/client-website-stack';
 
 const app = new cdk.App();
 
 var vpcprops: VpcStackProps = {};
 var nelsonVpc;
 if (config.get('useexistingvpc') == true && config.has('existingvpcname')) {
-  vpcprops.vpcname = config.get('existingvpcname') as string;
+    vpcprops.vpcname = config.get('existingvpcname') as string;
 } else {
-  const vpcStack = new VpcInfrastructureStack(app, `${config.get('environmentname')}-vpc`, {
-    env: {
-        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-    }
-  });
-  vpcprops.vpc = vpcStack.nelsonVpc;
-  nelsonVpc = vpcStack.nelsonVpc;
+    const vpcStack = new VpcInfrastructureStack(app, `${config.get('environmentname')}-vpc`, {
+        env: {
+            account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+            region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+        }
+    });
+    vpcprops.vpc = vpcStack.nelsonVpc;
+    nelsonVpc = vpcStack.nelsonVpc;
 };
 
 const saasInfrastructureStack = new SaasInfrastructureStack(app, `${config.get('environmentname')}SaasInfrastructure`, {
@@ -45,16 +44,16 @@ const buiInfrastructureStack = new BuiInfrastructureStack(app, `${config.get('en
     },
     vpc: saasInfrastructureStack.nelsonVpc,
     privateSG: saasInfrastructureStack.fargateClusterSG,
-    
+
 });
 
 const muiInfrastructureStack = new MuiInfrastructureStack(app, `${config.get('environmentname')}MuiInfrastructure`, {
-  env: {
-    account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-  },
-  vpc: saasInfrastructureStack.nelsonVpc,
-  privateSG: saasInfrastructureStack.fargateClusterSG
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    },
+    vpc: saasInfrastructureStack.nelsonVpc,
+    privateSG: saasInfrastructureStack.fargateClusterSG
 });
 
 const buiHostedZoneStack = new BuiHostedZoneStack(app, `${config.get('environmentname')}BuiHostedZoneStack`, {
@@ -95,16 +94,9 @@ const muiCloudFrontStack = new MuiCloudFrontStack(app, `${config.get('environmen
     crossRegionReferences: true
 });
 
-if (config.get('npriceinfrastructurestack.issupportednprice')) {
-    const npriceApiStack = new NpriceInfrastructureStack(app, `${config.get('environmentname')}NpriceInfrastructure`, {
-        env: {
-            account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-            region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-        },
-        vpc: nelsonVpc as IVpc
-    });
-}
-
-
-
-
+const clientWebsiteStack = new ClientWebsiteStack(app, `${config.get('environmentname')}ClientWebsite`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    }
+});

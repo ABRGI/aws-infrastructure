@@ -182,7 +182,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
             new cdk.Tag('nelson:client', `saas`)
         );
         cdk.Aspects.of(nelsonCfDistribution).add(
-            new cdk.Tag('nelson:role', `nelson-test-exhibiton-cloudfront-dist`)
+            new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}-cloudfront-dist`)
         );
         cdk.Aspects.of(nelsonCfDistribution).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))

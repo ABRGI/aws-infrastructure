@@ -62,7 +62,8 @@
         "owner": "ABRGI"
     },
     "tags": {
-        "nelsonenvironment": "exhibitioncourt"
+        "nelsonenvironment": "exhibitioncourt",
+        "nelsonroleprefix": "nelson-prod-exhibiton"
     },
     "nelsontenantmanagementservicetack": {
         "createbucket": false,
@@ -130,5 +131,9 @@
         "issupportednprice": "false",
         "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
         "region": "eu-central-1"
+    },
+    "clientwebsite": {
+        "enabled": true,
+        "bucketname": "kensingtonstay.com"
     }
 }
