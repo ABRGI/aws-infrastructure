@@ -19,7 +19,8 @@ export class ClientWebsiteStack extends cdk.Stack {
                 blockPublicPolicy: false,
                 ignorePublicAcls: false,
                 restrictPublicBuckets: false
-            })
+            }),
+            websiteIndexDocument: config.get('clientwebsite.indexdocument')
         });
         const websitePolicyStatement = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,

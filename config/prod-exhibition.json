@@ -134,6 +134,7 @@
     },
     "clientwebsite": {
         "enabled": true,
-        "bucketname": "kensingtonstay.com"
+        "bucketname": "kensingtonstay.com",
+        "indexdocument": "index.html"
     }
 }
