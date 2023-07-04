@@ -8,6 +8,7 @@ import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, I
 import path = require('path');
 import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 export interface NpriceStackProps extends cdk.StackProps {
     vpc: IVpc;
@@ -94,6 +95,13 @@ export class NpriceInfrastructureStack extends cdk.Stack {
         });
         npriceApiALB.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
+        const ssmRole = new iam.Role(this, 'SessionManagerPrivateInstanceRole', {
+            roleName: `${config.get('environmentname')}-ssm-private-instance-role`,
+            assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com")
+        });
+        ssmRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
+        ssmRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMFullAccess'));
+
         const npriceApiInstance = new Instance(this, `${config.get('environmentname')}NpriceApiInstance`, {
             instanceType: InstanceType.of(
                 InstanceClass.T2,
@@ -102,7 +110,8 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             machineImage: new AmazonLinuxImage(),
             vpc: props.vpc as Vpc,
             securityGroup: npriceApiSG,
-            instanceName: `${config.get('environmentname')}-nprice-api`
+            instanceName: `${config.get('environmentname')}-nprice-api`,
+            role: ssmRole
         });
         npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
@@ -131,12 +140,13 @@ export class NpriceInfrastructureStack extends cdk.Stack {
         const npriceCoreInstance = new Instance(this, `${config.get('environmentname')}NpriceCoreInstance`, {
             instanceType: InstanceType.of(
                 InstanceClass.T2,
-                InstanceSize.SMALL,
+                InstanceSize.MICRO,
             ),
             machineImage: new AmazonLinuxImage(),
             vpc: props.vpc as Vpc,
             securityGroup: npriceApiSG,
-            instanceName: `${config.get('environmentname')}-nprice-core`
+            instanceName: `${config.get('environmentname')}-nprice-core`,
+            role: ssmRole
         });
         npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 

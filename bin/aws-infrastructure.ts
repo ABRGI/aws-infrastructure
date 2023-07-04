@@ -11,6 +11,8 @@ import { BuiCloudFrontStack } from '../lib/bui-cloudfront-stack';
 import { BuiHostedZoneStack } from '../lib/bui-hosted-zone-stack';
 import { MuiHostedZoneStack } from '../lib/mui-hosted-zone-stack';
 import { ClientWebsiteStack } from '../lib/client-website-stack';
+import { NpriceInfrastructureStack } from '../lib/nprice-infrastructure-stack';
+import { IVpc } from 'aws-cdk-lib/aws-ec2';
 
 const app = new cdk.App();
 
@@ -100,3 +102,14 @@ const clientWebsiteStack = new ClientWebsiteStack(app, `${config.get('environmen
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
     }
 });
+
+
+if (config.get('npriceinfrastructurestack.issupportednprice')) {
+    const npriceApiStack = new NpriceInfrastructureStack(app, `${config.get('environmentname')}NpriceInfrastructure`, {
+        env: {
+            account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+            region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+        },
+        vpc: nelsonVpc as IVpc
+    });
+}
