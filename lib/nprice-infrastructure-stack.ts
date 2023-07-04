@@ -102,6 +102,16 @@ export class NpriceInfrastructureStack extends cdk.Stack {
         ssmRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
         ssmRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMFullAccess'));
 
+        const setupCommands = ec2.UserData.forLinux();
+        setupCommands.addCommands(
+            'sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm',
+            'sudo systemctl enable amazon-ssm-agent',
+            'sudo systemctl start amazon-ssm-agent'
+        );
+
+        const multipartUserData = new ec2.MultipartUserData();
+        multipartUserData.addPart(ec2.MultipartBody.fromUserData(setupCommands));
+
         const npriceApiInstance = new Instance(this, `${config.get('environmentname')}NpriceApiInstance`, {
             instanceType: InstanceType.of(
                 InstanceClass.T2,
@@ -111,7 +121,8 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             vpc: props.vpc as Vpc,
             securityGroup: npriceApiSG,
             instanceName: `${config.get('environmentname')}-nprice-api`,
-            role: ssmRole
+            role: ssmRole,
+            userData: multipartUserData
         });
         npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
@@ -146,7 +157,8 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             vpc: props.vpc as Vpc,
             securityGroup: npriceApiSG,
             instanceName: `${config.get('environmentname')}-nprice-core`,
-            role: ssmRole
+            role: ssmRole,
+            userData: multipartUserData
         });
         npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
