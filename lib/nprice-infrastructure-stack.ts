@@ -155,7 +155,7 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             ),
             machineImage: new AmazonLinuxImage(),
             vpc: props.vpc as Vpc,
-            securityGroup: npriceApiSG,
+            securityGroup: npriceCoreSG,
             instanceName: `${config.get('environmentname')}-nprice-core`,
             role: ssmRole,
             userData: multipartUserData
