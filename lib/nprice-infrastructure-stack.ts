@@ -117,7 +117,9 @@ export class NpriceInfrastructureStack extends cdk.Stack {
                 InstanceClass.T2,
                 InstanceSize.MICRO,
             ),
-            machineImage: new AmazonLinuxImage(),
+            machineImage: ec2.MachineImage.latestAmazonLinux({
+                generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
+            }),
             vpc: props.vpc as Vpc,
             securityGroup: npriceApiSG,
             instanceName: `${config.get('environmentname')}-nprice-api`,
@@ -150,10 +152,12 @@ export class NpriceInfrastructureStack extends cdk.Stack {
 
         const npriceCoreInstance = new Instance(this, `${config.get('environmentname')}NpriceCoreInstance`, {
             instanceType: InstanceType.of(
-                InstanceClass.T2,
-                InstanceSize.MICRO,
+                InstanceClass.M4,
+                InstanceSize.XLARGE
             ),
-            machineImage: new AmazonLinuxImage(),
+            machineImage: ec2.MachineImage.latestAmazonLinux({
+                generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
+            }),
             vpc: props.vpc as Vpc,
             securityGroup: npriceCoreSG,
             instanceName: `${config.get('environmentname')}-nprice-core`,
