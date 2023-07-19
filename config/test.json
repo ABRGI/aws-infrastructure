@@ -44,20 +44,32 @@
         "publicreadaccess": true,
         "hotelbuild": "demo",
         "locales": "fi, en, et, ru, sv",
-        "hotelchainname": "OmenaHotels",
-        "releaseversion": "1.0"
+        "hotelchainname": "DemoHotels",
+        "releaseversion": "1.0",
+        "repo": "nelson-bui-2.0",
+        "branch": "develop",
+        "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
         "bucketname": "test.nelson.management",
         "useexistingmuibucket": false,
-        "publicreadaccess": true
+        "publicreadaccess": true,
+        "rootfolder": "management",
+        "hotelbuild": "demo",
+        "releaseversion": "2.0",
+        "repo": "nelson-management-ui",
+        "branch": "develop",
+        "owner": "ABRGI"
     },
     "tags": {
-        "nelsonenvironment": "test-saas"
+        "nelsonenvironment": "test-saas",
+        "nelsonroleprefix": "test-saas"
     },
     "nelsontenantmanagementservicetack": {
-        "createbucket": false,
-        "tenanttable": "test-nelson-tenants"
+        "createbucket": true,
+        "tenanttable": "test-nelson-tenants",
+        "bucketname": "test-nelson-tenant-properties",
+        "publicreadaccess": true
     },
     "rdssnapshotexportpipelinestack": {
         "bucket": {
@@ -72,6 +84,59 @@
             }
         },
         "databasename": "saas-nelson-services-db-cluster"
+    },
+    "saasinfrastructurestack": {
+        "codebuildenvvariables": {
+            "appname": "nelson",
+            "majorversionnumber": 0,
+            "minorversionnumber": 0,
+            "repo": "SNAPSHOT",
+            "hostport": "8080",
+            "serviceport": "8080",
+            "cpu": "512",
+            "memory": "2048"
+        },
+        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/41ef7c6e-f3f4-473b-9b73-4d3110f60575",
+        "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
+        "nelsonrepo": "nelson",
+        "nelsondeploymentrepo": "nelson-deployment",
+        "nelsonbranch": "develop",
+        "nelsondeploymentbranch": "develop",
+        "owner": "ABRGI",
+        "useexistingdb": false,
+        "existingdbvpcid": ""
+    },
+    "buihostedzonestack": {
+        "hostedzone": "test-bui.bookn.io",
+        "createnewsubdomaincertificate": true,
+        "createnelsonmanagementcloudfrontentry": true,
+        "domain": "test.bookn.io"
+    },
+    "muihostedzonestack": {
+        "hostedzone": "test.nelson.management",
+        "createnewsubdomaincertificate": true,
+        "createnelsonmanagementcloudfrontentry": true,
+        "domain": "test.nelson.management"
+    },
+    "tenantproperties": {
+        "bucketname": "nelson-tenant-properties.s3.eu-central-1.amazonaws.com",
+        "originpath": "/DemoHotels/Prod-Demo",
+        "pathpattern": "/*-config.json"
+    },
+    "nelsonmanagementservice": {
+        "userserviceapigatewayurl": "ie3mgiz5s9.execute-api.eu-central-1.amazonaws.com",
+        "userserviceoriginpath": "/Prod",
+        "tenantserviceapigatewayurl": "t3n05vum9h.execute-api.eu-central-1.amazonaws.com",
+        "tenantserviceoriginpath": "/Prod"
+    },
+    "npriceinfrastructurestack": {
+        "issupportednprice": "true",
+        "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
+        "region": "eu-central-1"
+    },
+    "clientwebsite": {
+        "enabled": true,
+        "bucketname": "",
+        "indexdocument": "index.html"
     }
-
 }
