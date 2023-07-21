@@ -70,6 +70,7 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             securityGroupName: `${config.get('environmentname')}-nprice-api-sg`
         });
         npriceApiSG.connections.allowFrom(npriceApiElbSG, ec2.Port.tcp(80));
+        npriceApiSG.connections.allowFromAnyIpv4(ec2.Port.tcp(config.get('npriceinfrastructurestack.integrationapiport')));
         npriceApiSG.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         const npriceApiALB = new ApplicationLoadBalancer(this, 'ALB', {
