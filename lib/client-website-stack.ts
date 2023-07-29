@@ -62,7 +62,7 @@ export class ClientWebsiteStack extends cdk.Stack {
                     },
                     behaviors: [
                         {
-                            pathPattern: "/*",
+                            pathPattern: "/??/*",
                             isDefaultBehavior: false,
                             allowedMethods: CloudFrontAllowedMethods.ALL,
                             viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
@@ -100,5 +100,16 @@ export class ClientWebsiteStack extends cdk.Stack {
             ttl: Duration.minutes(5),
             target: RecordTarget.fromAlias(new CloudFrontTarget(websiteCfDistribution))
         }).applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+        //Tag the cloudfront distribution
+        cdk.Aspects.of(websiteCfDistribution).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(websiteCfDistribution).add(
+            new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}-cloudfront-dist`)
+        );
+        cdk.Aspects.of(websiteCfDistribution).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
     }
 }
