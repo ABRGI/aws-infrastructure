@@ -13,6 +13,7 @@ import { MuiHostedZoneStack } from '../lib/mui-hosted-zone-stack';
 import { ClientWebsiteStack } from '../lib/client-website-stack';
 import { NpriceInfrastructureStack } from '../lib/nprice-infrastructure-stack';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { ClientWebsiteHostedZoneStack } from '../lib/client-website-hosted-zone-stack';
 
 const app = new cdk.App();
 
@@ -96,11 +97,20 @@ const muiCloudFrontStack = new MuiCloudFrontStack(app, `${config.get('environmen
     crossRegionReferences: true
 });
 
+const clientWebsiteHostedzoneStack = new ClientWebsiteHostedZoneStack(app, `${config.get('environmentname')}ClientWebsiteHostedZoneStack`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: 'us-east-1' //Certificate of the hosted zone needs to be in N. Virginia. Hosted zones are global anyway
+    }
+});
 const clientWebsiteStack = new ClientWebsiteStack(app, `${config.get('environmentname')}ClientWebsite`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-    }
+    },
+    hostedZone: clientWebsiteHostedzoneStack.hostedZone,
+    viewerAcmCertificateArn: clientWebsiteHostedzoneStack.domainCertificate.certificateArn,
+    crossRegionReferences: true
 });
 
 

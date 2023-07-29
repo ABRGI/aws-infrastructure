@@ -13,7 +13,9 @@
         "nelsonuserpoolid": "",
         "guestuserpool": "nelson-guest-users",
         "loginprovideremaildomain": "nelson.management",
-        "logincallbackurls": ["https://admin.nelson.management"],
+        "logincallbackurls": [
+            "https://admin.nelson.management"
+        ],
         "appname": "nelsonmanagement",
         "cognitodomainprefix": "nelsonmanagementlogin",
         "loginurl": "",
@@ -137,7 +139,12 @@
     },
     "clientwebsite": {
         "enabled": true,
+        "createnewsubdomaincertificate": false,
+        "certificatedomain": "test.kensingtonstay.com",
+        "hostedzone": "kensongtonstay.com",
+        "domain": "test.kensingtonstay.com",
         "bucketname": "",
-        "indexdocument": "index.html"
+        "indexdocument": "index.html",
+        "certificatearn": ""
     }
 }
