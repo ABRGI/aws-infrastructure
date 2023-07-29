@@ -39,7 +39,7 @@
     "fargateclustersgid": "",
     "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
     "buiinfrastructurestack": {
-        "bucketname": "test-exhibition.bookn.io",
+        "bucketname": "test-kensingtonstay.bookn.io",
         "useexistingbuibucket": false,
         "publicreadaccess": true,
         "hotelbuild": "exhibition",
@@ -47,7 +47,7 @@
         "hotelchainname": "ECHotels",
         "releaseversion": "1.0",
         "repo": "nelson-bui-2.0",
-        "branch": "feature/test-exhibition-env",
+        "branch": "develop",
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
@@ -102,13 +102,13 @@
         "nelsondeploymentbranch": "feature/test-exhibition-env",
         "owner": "ABRGI",
         "useexistingdb": false,
-        "existingdbvpcid": ""
+        "existingdbvpcid": "vpc-03de42d39c4562987"
     },
     "buihostedzonestack": {
         "hostedzone": "bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test-exhibition.bookn.io"
+        "domain": "test-kensingtonstay.bookn.io"
     },
     "muihostedzonestack": {
         "hostedzone": "nelson.management",
