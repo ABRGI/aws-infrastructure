@@ -165,7 +165,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
     
         }
 
-        const cfnVPCPeeringConn = new ec2.CfnVPCPeeringConnection(this, 'MyPR', {
+        const cfnVPCPeeringConn = new ec2.CfnVPCPeeringConnection(this, 'PeeringConnection', {
             vpcId: this.nelsonVpc.vpcId,
             peerVpcId: config.get('saasinfrastructurestack.existingdbvpcid')
         });
