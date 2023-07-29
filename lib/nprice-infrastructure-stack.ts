@@ -96,12 +96,13 @@ export class NpriceInfrastructureStack extends cdk.Stack {
         });
         npriceApiALB.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-        const ssmRole = new iam.Role(this, 'SessionManagerPrivateInstanceRole', {
-            roleName: `${config.get('environmentname')}-ssm-private-instance-role`,
+        const npriceRole = new iam.Role(this, 'NpriceEC2Role', {
+            roleName: `${config.get('environmentname')}-nprice-ec2-role`,
             assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com")
         });
-        ssmRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
-        ssmRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMFullAccess'));
+        npriceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
+        npriceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMFullAccess'));
+        npriceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchLogsFullAccess'));
 
         const setupCommands = ec2.UserData.forLinux();
         setupCommands.addCommands(
@@ -124,7 +125,7 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             vpc: props.vpc as Vpc,
             securityGroup: npriceApiSG,
             instanceName: `${config.get('environmentname')}-nprice-api`,
-            role: ssmRole,
+            role: npriceRole,
             userData: multipartUserData
         });
         npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
@@ -162,10 +163,10 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             vpc: props.vpc as Vpc,
             securityGroup: npriceCoreSG,
             instanceName: `${config.get('environmentname')}-nprice-core`,
-            role: ssmRole,
+            role: npriceRole,
             userData: multipartUserData
         });
-        npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        npriceCoreInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         const npriceCoreStarerScript = new lambda.Function(this, 'NpriceCoreStarerScript', {
             runtime: lambda.Runtime.PYTHON_3_7,
