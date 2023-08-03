@@ -123,12 +123,6 @@
         "originpath": "/DemoHotels/Prod-Demo",
         "pathpattern": "/*-config.json"
     },
-    "nelsonmanagementservice": {
-        "userserviceapigatewayurl": "ie3mgiz5s9.execute-api.eu-central-1.amazonaws.com",
-        "userserviceoriginpath": "/Prod",
-        "tenantserviceapigatewayurl": "t3n05vum9h.execute-api.eu-central-1.amazonaws.com",
-        "tenantserviceoriginpath": "/Prod"
-    },
     "npriceinfrastructurestack": {
         "issupportednprice": "true",
         "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",

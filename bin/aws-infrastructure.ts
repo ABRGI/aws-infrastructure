@@ -93,9 +93,9 @@ const buiCloudFrontStack = new BuiCloudFrontStack(app, `${config.get('environmen
     },
     hostedZone: (config.get('clientwebsite.enabled') == true) ? clientWebsiteHostedzoneStack!.hostedZone : buiHostedZoneStack.hostedZone,
     viewerAcmCertificateArn: (config.get('clientwebsite.enabled') == true) ? clientWebsiteHostedzoneStack!.domainCertificate.certificateArn : buiHostedZoneStack.domainCertificate.certificateArn,
-    buiBucketName: buiInfrastructureStack.buiBucket,
-    loadBalancerDnsName: saasInfrastructureStack.loadBalancerDnsName,
+    buiBucket: buiInfrastructureStack.buiBucket,
     crossRegionReferences: true,
+    loadBalancer: saasInfrastructureStack.applicationLoadBalancer,
     clientWebsiteBucket: clientWebsiteStack?.websiteBucket,
 });
 
@@ -114,7 +114,7 @@ const muiCloudFrontStack = new MuiCloudFrontStack(app, `${config.get('environmen
     hostedZone: muiHostedZoneStack.hostedZone,
     viewerAcmCertificateArn: muiHostedZoneStack.domainCertificate.certificateArn,
     muiBucketName: muiInfrastructureStack.muiBucket,
-    loadBalancerDnsName: saasInfrastructureStack.loadBalancerDnsName,
+    loadBalancerDnsName: saasInfrastructureStack.applicationLoadBalancer.loadBalancerDnsName,
     crossRegionReferences: true
 });
 

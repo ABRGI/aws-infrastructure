@@ -118,15 +118,8 @@
         "domain": "exhibitioncourt.nelson.management"
     },
     "tenantproperties": {
-        "bucketname": "nelson-tenant-properties.s3.eu-central-1.amazonaws.com",
         "originpath": "/ECHotels/prod-exhibition",
         "pathpattern": "/*-config.json"
-    },
-    "nelsonmanagementservice": {
-        "userserviceapigatewayurl": "ie3mgiz5s9.execute-api.eu-central-1.amazonaws.com",
-        "userserviceoriginpath": "/Prod",
-        "tenantserviceapigatewayurl": "t3n05vum9h.execute-api.eu-central-1.amazonaws.com",
-        "tenantserviceoriginpath": "/Prod"
     },
     "npriceinfrastructurestack": {
         "issupportednprice": "false",

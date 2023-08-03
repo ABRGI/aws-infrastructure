@@ -35,7 +35,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
     nelsonVpc: ec2.IVpc;
     albSG: ec2.ISecurityGroup; // public security group
     fargateClusterSG: ec2.ISecurityGroup; // private security group
-    loadBalancerDnsName: string;
+    applicationLoadBalancer: ApplicationLoadBalancer;
 
     constructor(scope: Construct, id: string, props?: VpcStackProps) {
         super(scope, id, props);
@@ -184,7 +184,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
         );
 
         // Create ALB
-        const alb = new ApplicationLoadBalancer(this, 'ALB', {
+        this.applicationLoadBalancer = new ApplicationLoadBalancer(this, 'ALB', {
             vpc: this.nelsonVpc,
             internetFacing: true,
             loadBalancerName: `${config.get('environmentname')}`,
@@ -194,17 +194,17 @@ export class SaasInfrastructureStack extends cdk.Stack {
             },
             ipAddressType: IpAddressType.IPV4
         });
-        this.loadBalancerDnsName = alb.loadBalancerDnsName;
-        cdk.Aspects.of(alb).add(
+        
+        cdk.Aspects.of(this.applicationLoadBalancer).add(
             new cdk.Tag('nelson:client', 'saas')
         );
-        cdk.Aspects.of(alb).add(
+        cdk.Aspects.of(this.applicationLoadBalancer).add(
             new cdk.Tag('nelson:role', 'service')
         );
-        cdk.Aspects.of(alb).add(
+        cdk.Aspects.of(this.applicationLoadBalancer).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
-        cdk.Aspects.of(alb).add(
+        cdk.Aspects.of(this.applicationLoadBalancer).add(
             new cdk.Tag('Name', `${config.get('environmentname')}-alb`)
         );
 
@@ -234,7 +234,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             new cdk.Tag('Name', `${config.get('environmentname')}-target-group-01`)
         );
 
-        const prodLisener = alb.addListener('ProdListener', {
+        const prodLisener = this.applicationLoadBalancer.addListener('ProdListener', {
             port: 443,
             protocol: ApplicationProtocol.HTTPS,
             defaultTargetGroups: [targetGroup1]
@@ -285,7 +285,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             new cdk.Tag('Name', `${config.get('environmentname')}-target-group-02`)
         );
 
-        const testListener = alb.addListener('TestListener', {
+        const testListener = this.applicationLoadBalancer.addListener('TestListener', {
             port: 8443,
             protocol: ApplicationProtocol.HTTPS,
             defaultTargetGroups: [targetGroup2]
@@ -297,7 +297,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             testListener.addCertificates('MuiDomainCertificate', [ListenerCertificate.fromArn(config.get('saasinfrastructurestack.muidomaincertificatearn'))]);
         }
         testListener.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-        alb.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        this.applicationLoadBalancer.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         cdk.Aspects.of(testListener).add(
             new cdk.Tag('nelson:client', 'saas')
         );
