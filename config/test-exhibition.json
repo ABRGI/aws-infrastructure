@@ -94,17 +94,18 @@
             "cpu": "512",
             "memory": "2048"
         },
-        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/41ef7c6e-f3f4-473b-9b73-4d3110f60575",
+        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/b63d1061-8540-448c-ac4c-4b665703f37e",
         "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
         "nelsonrepo": "nelson",
         "nelsondeploymentrepo": "nelson-deployment",
         "nelsonbranch": "feature/SAAS-621-setup-exhibition-env",
         "nelsondeploymentbranch": "feature/test-exhibition-env",
         "owner": "ABRGI",
-        "useexistingdb": false,
+        "useexistingdb": true,
         "existingdbvpcid": "vpc-03de42d39c4562987"
     },
     "buihostedzonestack": {
+        "useclientdomain": true,
         "hostedzone": "bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,

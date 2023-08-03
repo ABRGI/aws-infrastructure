@@ -13,24 +13,27 @@ export interface BuiCloudFrontStackProps extends cdk.StackProps {
     viewerAcmCertificateArn: string,
     buiBucketName: IBucket,
     loadBalancerDnsName: string;
+    clientWebsiteBucket?: IBucket,
 }
 
 export class BuiCloudFrontStack extends cdk.Stack {
 
     constructor(scope: Construct, id: string, props: BuiCloudFrontStackProps) {
+        var useClientDomain = config.get('buihostedzonestack.useclientdomain');
+        if (useClientDomain == true && !props.clientWebsiteBucket) {
+            throw ('Expecting client website bucket');
+        }
         super(scope, id, props);
         const certificate = Certificate.fromCertificateArn(this, 'NelsonBuiDomainCertificate', props.viewerAcmCertificateArn);
         //Step 1: Create cloudfront distribution
-        console.log('BUI BUCKET: ' + props.buiBucketName);
-        console.log(this.region);
         const nelsonCfDistribution = new CloudFrontWebDistribution(this, 'NelsonBuiCFDistribution', {
-            comment: `${config.get('buihostedzonestack.domain')}`,
+            comment: useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain'),
             originConfigs: [
                 //S3 redirect for static website
                 {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
-                        domainName: `${config.get('buiinfrastructurestack.bucketname')}.s3-website.${this.region}.amazonaws.com`,
+                        domainName: `${useClientDomain ? config.get('clientwebsite.bucketname') : config.get('buiinfrastructurestack.bucketname')}.s3-website.${this.region}.amazonaws.com`,
                         originProtocolPolicy: OriginProtocolPolicy.HTTP_ONLY
                     },
                     behaviors: [
@@ -39,8 +42,6 @@ export class BuiCloudFrontStack extends cdk.Stack {
                             isDefaultBehavior: true,
                             allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
                             viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                            
-                            
                         }
                     ]
                 },
@@ -102,14 +103,14 @@ export class BuiCloudFrontStack extends cdk.Stack {
 
                     },
                     behaviors: [
-                        {  
+                        {
                             pathPattern: '/api/*',
                             isDefaultBehavior: false,
                             allowedMethods: CloudFrontAllowedMethods.ALL,
-                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                         }
                     ],
-                    
+
                 },
                 //tenants
                 {
@@ -134,16 +135,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                             minTtl: Duration.seconds(0),
                             maxTtl: Duration.seconds(0),
                             defaultTtl: Duration.seconds(0)
-                        }]
-                },
-                //tenants
-                {
-                    connectionTimeout: Duration.seconds(5),
-                    customOriginSource: {
-                        domainName: config.get('tenantproperties.bucketname'),
-                        originPath: config.get('tenantproperties.originpath')
-                    },
-                    behaviors: [
+                        },
                         {
                             //User management service behavior
                             pathPattern: '/config.txt',
@@ -160,19 +152,90 @@ export class BuiCloudFrontStack extends cdk.Stack {
                             maxTtl: Duration.seconds(0),
                             defaultTtl: Duration.seconds(0)
                         }]
+                },
+                //BUI redirects
+                {
+                    connectionTimeout: Duration.seconds(5),
+                    customOriginSource: {
+                        domainName: `${config.get('buiinfrastructurestack.bucketname')}.s3-website.${this.region}.amazonaws.com`,
+                        originProtocolPolicy: OriginProtocolPolicy.HTTP_ONLY
+                    },
+                    behaviors: [
+                        {
+                            pathPattern: '/management*',
+                            compress: false,
+                            isDefaultBehavior: false,
+                            allowedMethods: CloudFrontAllowedMethods.ALL,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                            forwardedValues: {
+                                headers: ['Authorization'],
+                                queryString: true,
+                            },
+                            cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                            minTtl: Duration.seconds(0),
+                            maxTtl: Duration.seconds(0),
+                            defaultTtl: Duration.seconds(0)
+                        },
+                        {
+                            pathPattern: '/lock*',
+                            compress: false,
+                            isDefaultBehavior: false,
+                            allowedMethods: CloudFrontAllowedMethods.ALL,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                            forwardedValues: {
+                                headers: ['Authorization'],
+                                queryString: true,
+                            },
+                            cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                            minTtl: Duration.seconds(0),
+                            maxTtl: Duration.seconds(0),
+                            defaultTtl: Duration.seconds(0)
+                        },
+                        {
+                            pathPattern: '/??/booking',
+                            compress: false,
+                            isDefaultBehavior: false,
+                            allowedMethods: CloudFrontAllowedMethods.ALL,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                            forwardedValues: {
+                                headers: ['Authorization'],
+                                queryString: true,
+                            },
+                            cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                            minTtl: Duration.seconds(0),
+                            maxTtl: Duration.seconds(0),
+                            defaultTtl: Duration.seconds(0)
+                        },
+                        {
+                            pathPattern: '/??/booking/*',
+                            compress: false,
+                            isDefaultBehavior: false,
+                            allowedMethods: CloudFrontAllowedMethods.ALL,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                            forwardedValues: {
+                                headers: ['Authorization'],
+                                queryString: true,
+                            },
+                            cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                            minTtl: Duration.seconds(0),
+                            maxTtl: Duration.seconds(0),
+                            defaultTtl: Duration.seconds(0)
+                        }
+                    ]
                 }
             ],
             viewerCertificate: ViewerCertificate.fromAcmCertificate(certificate, {
-                aliases: [props.buiBucketName.bucketName]
+                aliases: [useClientDomain ? props.clientWebsiteBucket!.bucketName : props.buiBucketName.bucketName]
             })
         });
         nelsonCfDistribution.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-         //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
-         new ARecord(this, 'NelsonBuiCloudFrontARecord', {
+        var aRecordName = useClientDomain ? (String(config.get('clientwebsite.domain')).split(`.${config.get('clientwebsite.hostedzone')}`)[0]) : (String(config.get('buihostedzonestack.domain')).split(`.${config.get('buihostedzonestack.hostedzone')}`)[0]);
+        //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
+        new ARecord(this, 'NelsonBuiCloudFrontARecord', {
             zone: props.hostedZone,
-            recordName: String(config.get('buihostedzonestack.domain')).split(`.${config.get('buihostedzonestack.hostedzone')}`)[0],  //Get only the subdomain value
-            comment: props.buiBucketName.bucketName,
+            recordName: aRecordName,
+            comment: useClientDomain ? props.clientWebsiteBucket!.bucketName : props.buiBucketName.bucketName,
             ttl: Duration.minutes(5),
             target: RecordTarget.fromAlias(new CloudFrontTarget(nelsonCfDistribution))
         }).applyRemovalPolicy(config.get('defaultremovalpolicy'));

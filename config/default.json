@@ -109,6 +109,7 @@
         "existingdbvpcid": ""
     },
     "buihostedzonestack": {
+        "useclientdomain": false,
         "hostedzone": "bui.bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,

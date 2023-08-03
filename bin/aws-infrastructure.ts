@@ -32,6 +32,26 @@ if (config.get('useexistingvpc') == true && config.has('existingvpcname')) {
     nelsonVpc = vpcStack.nelsonVpc;
 };
 
+var clientWebsiteStack: ClientWebsiteStack | undefined;
+var clientWebsiteHostedzoneStack: ClientWebsiteHostedZoneStack | undefined;
+if (config.get('clientwebsite.enabled') == true) {
+    clientWebsiteHostedzoneStack = new ClientWebsiteHostedZoneStack(app, `${config.get('environmentname')}ClientWebsiteHostedZoneStack`, {
+        env: {
+            account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+            region: 'us-east-1' //Certificate of the hosted zone needs to be in N. Virginia. Hosted zones are global anyway
+        }
+    });
+    clientWebsiteStack = new ClientWebsiteStack(app, `${config.get('environmentname')}ClientWebsite`, {
+        env: {
+            account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+            region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+        },
+        hostedZone: clientWebsiteHostedzoneStack.hostedZone,
+        viewerAcmCertificateArn: clientWebsiteHostedzoneStack.domainCertificate.certificateArn,
+        crossRegionReferences: true
+    });
+}
+
 const saasInfrastructureStack = new SaasInfrastructureStack(app, `${config.get('environmentname')}SaasInfrastructure`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
@@ -71,11 +91,12 @@ const buiCloudFrontStack = new BuiCloudFrontStack(app, `${config.get('environmen
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
     },
-    hostedZone: buiHostedZoneStack.hostedZone,
-    viewerAcmCertificateArn: buiHostedZoneStack.domainCertificate.certificateArn,
+    hostedZone: (config.get('clientwebsite.enabled') == true) ? clientWebsiteHostedzoneStack!.hostedZone : buiHostedZoneStack.hostedZone,
+    viewerAcmCertificateArn: (config.get('clientwebsite.enabled') == true) ? clientWebsiteHostedzoneStack!.domainCertificate.certificateArn : buiHostedZoneStack.domainCertificate.certificateArn,
     buiBucketName: buiInfrastructureStack.buiBucket,
     loadBalancerDnsName: saasInfrastructureStack.loadBalancerDnsName,
-    crossRegionReferences: true
+    crossRegionReferences: true,
+    clientWebsiteBucket: clientWebsiteStack?.websiteBucket,
 });
 
 const muiHostedZoneStack = new MuiHostedZoneStack(app, `${config.get('environmentname')}MuiHostedZoneStack`, {
@@ -96,23 +117,6 @@ const muiCloudFrontStack = new MuiCloudFrontStack(app, `${config.get('environmen
     loadBalancerDnsName: saasInfrastructureStack.loadBalancerDnsName,
     crossRegionReferences: true
 });
-
-const clientWebsiteHostedzoneStack = new ClientWebsiteHostedZoneStack(app, `${config.get('environmentname')}ClientWebsiteHostedZoneStack`, {
-    env: {
-        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-        region: 'us-east-1' //Certificate of the hosted zone needs to be in N. Virginia. Hosted zones are global anyway
-    }
-});
-const clientWebsiteStack = new ClientWebsiteStack(app, `${config.get('environmentname')}ClientWebsite`, {
-    env: {
-        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-    },
-    hostedZone: clientWebsiteHostedzoneStack.hostedZone,
-    viewerAcmCertificateArn: clientWebsiteHostedzoneStack.domainCertificate.certificateArn,
-    crossRegionReferences: true
-});
-
 
 if (config.get('npriceinfrastructurestack.issupportednprice')) {
     const npriceApiStack = new NpriceInfrastructureStack(app, `${config.get('environmentname')}NpriceInfrastructure`, {

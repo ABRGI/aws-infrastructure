@@ -14,9 +14,9 @@ export interface ClientWebsiteCloudFrontStackProps extends cdk.StackProps {
     viewerAcmCertificateArn: string
 }
 
-//TODO: update the cloudfront stack to point to the client website.
 export class ClientWebsiteStack extends cdk.Stack {
     websiteBucket: cdk.aws_s3.Bucket;
+    websiteCfDistribution: CloudFrontWebDistribution;
     constructor(scope: Construct, id: string, props: ClientWebsiteCloudFrontStackProps) {
         super(scope, id, props);
         var certificate = Certificate.fromCertificateArn(this, 'ClientWebsiteDomainCertificate', props.viewerAcmCertificateArn);
@@ -52,64 +52,67 @@ export class ClientWebsiteStack extends cdk.Stack {
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
-        const websiteCfDistribution = new CloudFrontWebDistribution(this, 'ClientWebsiteCFDistribution', {
-            comment: config.get('clientwebsite.bucketname'),
-            originConfigs: [
-                {
-                    connectionTimeout: Duration.seconds(5),
-                    customOriginSource: {
-                        domainName: config.get('buiinfrastructurestack.bucketname'),
+        //Use a new distribution only if BUI is not on the same distribution
+        if (config.get('buihostedzonestack.useclientdomain') == false) {
+            this.websiteCfDistribution = new CloudFrontWebDistribution(this, 'ClientWebsiteCFDistribution', {
+                comment: config.get('clientwebsite.domain'),
+                originConfigs: [
+                    {
+                        connectionTimeout: Duration.seconds(5),
+                        customOriginSource: {
+                            domainName: config.get('buiinfrastructurestack.bucketname'),
+                        },
+                        behaviors: [
+                            {
+                                pathPattern: "/??/*",
+                                isDefaultBehavior: false,
+                                allowedMethods: CloudFrontAllowedMethods.ALL,
+                                viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                            }
+                        ]
                     },
-                    behaviors: [
-                        {
-                            pathPattern: "/??/*",
-                            isDefaultBehavior: false,
-                            allowedMethods: CloudFrontAllowedMethods.ALL,
-                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
-                        }
-                    ]
-                },
-                //S3 redirect for static website
-                {
-                    connectionTimeout: Duration.seconds(5),
-                    customOriginSource: {
-                        domainName: `${config.get('clientwebsite.bucketname')}.s3-website.${this.region}.amazonaws.com`,
-                        originProtocolPolicy: OriginProtocolPolicy.HTTP_ONLY
+                    //S3 redirect for static website
+                    {
+                        connectionTimeout: Duration.seconds(5),
+                        customOriginSource: {
+                            domainName: `${config.get('clientwebsite.bucketname')}.s3-website.${this.region}.amazonaws.com`,
+                            originProtocolPolicy: OriginProtocolPolicy.HTTP_ONLY
+                        },
+                        behaviors: [
+                            //Default behavior
+                            {
+                                isDefaultBehavior: true,
+                                allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
+                                viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                            }
+                        ]
                     },
-                    behaviors: [
-                        //Default behavior
-                        {
-                            isDefaultBehavior: true,
-                            allowedMethods: CloudFrontAllowedMethods.GET_HEAD,
-                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
-                        }
-                    ]
-                },
-            ],
-            viewerCertificate: ViewerCertificate.fromAcmCertificate(certificate, {
-                aliases: [config.get('clientwebsite.bucketname')]
-            })
-        });
-        websiteCfDistribution.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+                ],
+                viewerCertificate: ViewerCertificate.fromAcmCertificate(certificate, {
+                    aliases: [config.get('clientwebsite.domain')]
+                })
+            });
+            this.websiteCfDistribution.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-        //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
-        new ARecord(this, 'ClientWebsiteCloudFrontARecord', {
-            zone: props.hostedZone,
-            recordName: String(config.get('clientwebsite.domain')).split(`.${config.get('clientwebsite.hostedzone')}`)[0],  //Get only the subdomain value
-            comment: config.get('clientwebsite.domain'),
-            ttl: Duration.minutes(5),
-            target: RecordTarget.fromAlias(new CloudFrontTarget(websiteCfDistribution))
-        }).applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
+            new ARecord(this, 'ClientWebsiteCloudFrontARecord', {
+                zone: props.hostedZone,
+                recordName: String(config.get('clientwebsite.domain')).split(`.${config.get('clientwebsite.hostedzone')}`)[0],  //Get only the subdomain value
+                comment: config.get('clientwebsite.domain'),
+                ttl: Duration.minutes(5),
+                target: RecordTarget.fromAlias(new CloudFrontTarget(this.websiteCfDistribution))
+            }).applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-        //Tag the cloudfront distribution
-        cdk.Aspects.of(websiteCfDistribution).add(
-            new cdk.Tag('nelson:client', `saas`)
-        );
-        cdk.Aspects.of(websiteCfDistribution).add(
-            new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}-cloudfront-dist`)
-        );
-        cdk.Aspects.of(websiteCfDistribution).add(
-            new cdk.Tag('nelson:environment', config.get('environmentname'))
-        );
+            //Tag the cloudfront distribution
+            cdk.Aspects.of(this.websiteCfDistribution).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(this.websiteCfDistribution).add(
+                new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}-cloudfront-dist`)
+            );
+            cdk.Aspects.of(this.websiteCfDistribution).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+        }
     }
 }

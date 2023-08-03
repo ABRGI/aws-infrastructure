@@ -36,7 +36,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
     albSG: ec2.ISecurityGroup; // public security group
     fargateClusterSG: ec2.ISecurityGroup; // private security group
     loadBalancerDnsName: string;
-    
+
     constructor(scope: Construct, id: string, props?: VpcStackProps) {
         super(scope, id, props);
         if (props?.vpcname != null) {
@@ -74,7 +74,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             );
             this.albSG = albSG;
         }
-        
+
         if (config.get('useexistingfargateclustersg') == true && config.has('fargateclustersgid')) {
             this.fargateClusterSG = ec2.SecurityGroup.fromLookupById(this, 'SG', config.get('fargateclustersgid'));
         } else {
@@ -90,8 +90,8 @@ export class SaasInfrastructureStack extends cdk.Stack {
                 stringRepresentation: '',
                 fromPort: 0,
                 toPort: 65535
-            }; 
-            fargateClusterSG.connections.allowFrom(this.albSG, new ec2.Port(portProps)); 
+            };
+            fargateClusterSG.connections.allowFrom(this.albSG, new ec2.Port(portProps));
             fargateClusterSG.applyRemovalPolicy(config.get('defaultremovalpolicy'));
             cdk.Aspects.of(fargateClusterSG).add(
                 new cdk.Tag('Name', `${config.get('environmentname')}-fargate-cluster-sg`)
@@ -114,7 +114,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
                 allowAllOutbound: true,
                 description: "Security group for RDS",
                 securityGroupName: `${config.get('environmentname')}-db-sg`
-              });
+            });
             for (const privateSubnet of this.nelsonVpc.privateSubnets) {
                 dbSecurityGroup.addIngressRule(ec2.Peer.ipv4(privateSubnet.ipv4CidrBlock), ec2.Port.tcp(5432), 'Receive all traffics from internet via port 443');
             }
@@ -131,10 +131,10 @@ export class SaasInfrastructureStack extends cdk.Stack {
             cdk.Aspects.of(dbSecurityGroup).add(
                 new cdk.Tag('Name', `${config.get('environmentname')}-db-sg`)
             );
-    
+
             // Create nelson DB
             const nelsonDB = new rds.DatabaseCluster(this, 'Database', {
-                engine: rds.DatabaseClusterEngine.auroraPostgres({version: rds.AuroraPostgresEngineVersion.VER_13_7}), 
+                engine: rds.DatabaseClusterEngine.auroraPostgres({ version: rds.AuroraPostgresEngineVersion.VER_13_7 }),
                 instanceProps: {
                     vpc: this.nelsonVpc,
                     vpcSubnets: {
@@ -162,7 +162,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             cdk.Aspects.of(nelsonDB).add(
                 new cdk.Tag('Name', `${config.get('environmentname')}-rds`)
             );
-    
+
         }
 
         const cfnVPCPeeringConn = new ec2.CfnVPCPeeringConnection(this, 'PeeringConnection', {
@@ -182,7 +182,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
         cdk.Aspects.of(cfnVPCPeeringConn).add(
             new cdk.Tag('Name', `${config.get('environmentname')}-vpc-to-db`)
         );
-        
+
         // Create ALB
         const alb = new ApplicationLoadBalancer(this, 'ALB', {
             vpc: this.nelsonVpc,
@@ -238,7 +238,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             port: 443,
             protocol: ApplicationProtocol.HTTPS,
             defaultTargetGroups: [targetGroup1]
-            
+
         });
         if (config.get('saasinfrastructurestack.buidomaincertificatearn')) {
             prodLisener.addCertificates('BuiDomainCertificate', [ListenerCertificate.fromArn(config.get('saasinfrastructurestack.buidomaincertificatearn'))]);
@@ -259,7 +259,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             new cdk.Tag('Name', `${config.get('environmentname')}-prod-listener`)
         );
         prodLisener.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-        
+
         const targetGroup2 = new ApplicationTargetGroup(this, 'TG2', {
             port: 80,
             protocol: ApplicationProtocol.HTTP,
@@ -285,7 +285,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             new cdk.Tag('Name', `${config.get('environmentname')}-target-group-02`)
         );
 
-        const testListener = alb.addListener('Testistener', {
+        const testListener = alb.addListener('TestListener', {
             port: 8443,
             protocol: ApplicationProtocol.HTTPS,
             defaultTargetGroups: [targetGroup2]
@@ -312,7 +312,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
         );
 
         // Create log group for ECS
-        const ecsLogs = new  LogGroup(this, 'ECSLogGroup', {
+        const ecsLogs = new LogGroup(this, 'ECSLogGroup', {
             logGroupName: `/ecs/${config.get('environmentname')}-${config.get('saasinfrastructurestack.codebuildenvvariables.appname')}`
         });
         ecsLogs.applyRemovalPolicy(config.get('defaultremovalpolicy'));
@@ -392,8 +392,8 @@ export class SaasInfrastructureStack extends cdk.Stack {
             stringRepresentation: '',
             fromPort: 0,
             toPort: 65535
-        }; 
-        ecsService.connections.allowFrom(this.albSG, new ec2.Port(portProps)); 
+        };
+        ecsService.connections.allowFrom(this.albSG, new ec2.Port(portProps));
         cluster.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
         // Create code build
@@ -649,7 +649,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
             appSpecTemplateFile: new ArtifactPath(nelsonDeplBuildOutput, 'appspec.yml'),
             role: deployRole
         });
-        
+
         const codePipelinePolicy = new iam.PolicyStatement({
             actions: [
                 'codedeploy:CreateDeployment',
