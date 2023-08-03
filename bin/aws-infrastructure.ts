@@ -113,7 +113,6 @@ const muiCloudFrontStack = new MuiCloudFrontStack(app, `${config.get('environmen
     },
     hostedZone: muiHostedZoneStack.hostedZone,
     viewerAcmCertificateArn: muiHostedZoneStack.domainCertificate.certificateArn,
-    muiBucketName: muiInfrastructureStack.muiBucket,
     loadBalancerDnsName: saasInfrastructureStack.applicationLoadBalancer.loadBalancerDnsName,
     crossRegionReferences: true
 });

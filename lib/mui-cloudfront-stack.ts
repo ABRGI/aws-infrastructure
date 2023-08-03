@@ -10,7 +10,6 @@ import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 export interface MuiCloudFrontStackProps extends cdk.StackProps {
     hostedZone: IHostedZone,
     viewerAcmCertificateArn: string,
-    muiBucketName: IBucket,
     loadBalancerDnsName: string;
 }
 
@@ -21,7 +20,7 @@ export class MuiCloudFrontStack extends cdk.Stack {
         const certificate = Certificate.fromCertificateArn(this, 'NelsonMuiDomainCertificate', props.viewerAcmCertificateArn);
         //Step 1: Create cloudfront distribution
         const nelsonCfDistribution = new CloudFrontWebDistribution(this, 'NelsonMuiCFDistribution', {
-            comment: props.muiBucketName.bucketName,
+            comment: config.get('muiinfrastructurestack.bucketname'),
             originConfigs: [
                 //S3 redirect for static website
                 {
@@ -94,14 +93,20 @@ export class MuiCloudFrontStack extends cdk.Stack {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
                         domainName: props.loadBalancerDnsName,
-
                     },
                     behaviors: [
                         {  
                             pathPattern: '/api/*',
                             isDefaultBehavior: false,
                             allowedMethods: CloudFrontAllowedMethods.ALL,
-                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                            forwardedValues: {
+                                headers: ['*'],
+                                queryString: true,
+                            },
+                            minTtl: Duration.seconds(0),
+                            maxTtl: Duration.seconds(0),
+                            defaultTtl: Duration.seconds(0)
                         }
                     ]
                     
@@ -110,7 +115,7 @@ export class MuiCloudFrontStack extends cdk.Stack {
                 {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
-                        domainName: config.get('tenantproperties.bucketname'),
+                        domainName: `${config.get('tenantproperties.bucketname')}.s3.eu-central-1.amazonaws.com`,
                         originPath: config.get('tenantproperties.originpath')
                     },
                     behaviors: [
@@ -135,7 +140,7 @@ export class MuiCloudFrontStack extends cdk.Stack {
                 {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
-                        domainName: config.get('tenantproperties.bucketname'),
+                        domainName: `${config.get('tenantproperties.bucketname')}.s3.eu-central-1.amazonaws.com`,
                         originPath: config.get('tenantproperties.originpath')
                     },
                     behaviors: [
@@ -158,7 +163,7 @@ export class MuiCloudFrontStack extends cdk.Stack {
                 }
             ],
             viewerCertificate: ViewerCertificate.fromAcmCertificate(certificate, {
-                aliases: [props.muiBucketName.bucketName]
+                aliases: [config.get('muiinfrastructurestack.bucketname')]
             })
         });
         nelsonCfDistribution.applyRemovalPolicy(config.get('defaultremovalpolicy'));
