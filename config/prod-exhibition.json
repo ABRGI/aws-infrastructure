@@ -1,6 +1,6 @@
 {
     "environmentname": "prod-exhibition",
-    "domain": "exhibitioncourt.nelson.management",
+    "domain": "kensingtonstay.nelson.management",
     "hostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
@@ -39,7 +39,7 @@
     "fargateclustersgid": "",
     "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
     "buiinfrastructurestack": {
-        "bucketname": "exhibitioncourt.bookn.io",
+        "bucketname": "kensingtonstay.bookn.io",
         "useexistingbuibucket": false,
         "publicreadaccess": true,
         "hotelbuild": "exhibition",
@@ -51,7 +51,7 @@
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
-        "bucketname": "exhibitioncourt.nelson.management",
+        "bucketname": "kensingtonstay.nelson.management",
         "useexistingmuibucket": false,
         "publicreadaccess": true,
         "rootfolder": "management",
@@ -94,7 +94,7 @@
             "cpu": "1024",
             "memory": "4096"
         },
-        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/41ef7c6e-f3f4-473b-9b73-4d3110f60575",
+        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/b63d1061-8540-448c-ac4c-4b665703f37e",
         "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
         "nelsonrepo": "nelson",
         "nelsondeploymentrepo": "nelson-deployment",
@@ -109,13 +109,13 @@
         "hostedzone": "bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "exhibitioncourt.bookn.io"
+        "domain": "kensingtonstay.bookn.io"
     },
     "muihostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "exhibitioncourt.nelson.management"
+        "domain": "kensingtonstay.nelson.management"
     },
     "tenantproperties": {
         "originpath": "/ECHotels/prod-exhibition",
@@ -129,7 +129,7 @@
     "clientwebsite": {
         "enabled": true,
         "createnewsubdomaincertificate": false,
-        "certificatedomain": "test.kensingtonstay.com",
+        "certificatedomain": "kensingtonstay.com",
         "hostedzone": "kensongtonstay.com",
         "domain": "kensingtonstay.com",
         "bucketname": "kensingtonstay.com",

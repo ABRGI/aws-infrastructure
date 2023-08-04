@@ -54,7 +54,7 @@ export class MuiCloudFrontStack extends cdk.Stack {
                             allowedMethods: CloudFrontAllowedMethods.ALL,
                             viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                             forwardedValues: {
-                                headers: ['*'],
+                                headers: ['Authorization'],
                                 queryString: true,
                             },
                             cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
@@ -79,7 +79,7 @@ export class MuiCloudFrontStack extends cdk.Stack {
                             allowedMethods: CloudFrontAllowedMethods.ALL,
                             viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                             forwardedValues: {
-                                headers: ['*'],
+                                headers: ['Authorization'],
                                 queryString: true,
                             },
                             cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
