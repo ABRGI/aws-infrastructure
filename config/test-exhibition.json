@@ -1,6 +1,6 @@
 {
     "environmentname": "test-exhibition",
-    "domain": "test-exhibition.nelson.management",
+    "domain": "test-kensingtonstay.nelson.management",
     "hostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
@@ -51,7 +51,7 @@
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
-        "bucketname": "test-exhibition.nelson.management",
+        "bucketname": "test-kensingtonstay.nelson.management",
         "useexistingmuibucket": false,
         "publicreadaccess": true,
         "rootfolder": "management",
@@ -115,7 +115,7 @@
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test-exhibition.nelson.management"
+        "domain": "test-kensingtonstay.nelson.management"
     },
     "tenantproperties": {
         "originpath": "/ECHotels/test-exhibition",
