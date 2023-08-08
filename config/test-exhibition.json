@@ -13,7 +13,9 @@
         "nelsonuserpoolid": "",
         "guestuserpool": "test-guest-users",
         "loginprovideremaildomain": "nelson.management",
-        "logincallbackurls": ["https://test.nelson.management/users"],
+        "logincallbackurls": [
+            "https://test.nelson.management/users"
+        ],
         "appname": "nelsonmanagement",
         "cognitodomainprefix": "testnelsonmanagementlogin",
         "loginurl": "",
@@ -124,7 +126,10 @@
     "npriceinfrastructurestack": {
         "issupportednprice": "true",
         "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
-        "region": "eu-central-1"
+        "region": "eu-central-1",
+        "corebootcron": {
+            "minute": "57,12,27,42"
+        }
     },
     "clientwebsite": {
         "enabled": true,

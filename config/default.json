@@ -136,7 +136,14 @@
         "issupportednprice": "true",
         "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
         "region": "eu-central-1",
-        "integrationapiport": 3000
+        "integrationapiport": 3000,
+        "corebootcron": {
+            "minute": "57",
+            "hour": "*",
+            "day": "*",
+            "month": "*",
+            "year": "*"
+        }
     },
     "clientwebsite": {
         "enabled": true,

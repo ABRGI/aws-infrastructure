@@ -223,13 +223,7 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             ruleName: `${config.get('environmentname')}-nPriceCoreStarter`,
             description: `Event to trigger the nprice starter lambda function for ${config.get('environmentname')} environment`,
             enabled: true,
-            schedule: Schedule.cron({
-                minute: '57',
-                hour: '*',
-                day: '*',   //Weekday can't be defined along with day. Assumed to be '?'
-                month: '*',
-                year: '*'
-            }),
+            schedule: Schedule.cron(config.get('npriceinfrastructurestack.corebootcron')),
             targets: [
                 new cdk.aws_events_targets.LambdaFunction(npriceCoreStarerScript)
             ]
