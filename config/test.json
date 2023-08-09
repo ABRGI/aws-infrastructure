@@ -110,7 +110,9 @@
         "hostedzone": "test-bui.bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test.bookn.io"
+        "domain": "test.bookn.io",
+        "useexistingsesidentity": true,
+        "sesidentityemailaddress": "bookn.io"
     },
     "muihostedzonestack": {
         "hostedzone": "test.nelson.management",
