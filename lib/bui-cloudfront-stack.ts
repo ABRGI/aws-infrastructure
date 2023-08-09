@@ -1,15 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, Distribution, OriginProtocolPolicy, OriginRequestPolicy, OriginRequestQueryStringBehavior, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
-import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { ARecord, CfnRecordSet, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { Duration } from 'aws-cdk-lib';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as config from 'config';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
-import { HttpOrigin, LoadBalancerV2Origin, RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
-import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
+import { HttpOrigin, LoadBalancerV2Origin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { ApplicationLoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as ses from 'aws-cdk-lib/aws-ses';
 
 export interface BuiCloudFrontStackProps extends cdk.StackProps {
     hostedZone: IHostedZone,
@@ -171,5 +171,80 @@ export class BuiCloudFrontStack extends cdk.Stack {
         cdk.Aspects.of(buiCFDistribution).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
+
+        // Create SES configuration
+        if (!config.get('buihostedzonestack.useexistingsesidentity')) {
+            const sesIdentity = new ses.EmailIdentity(this, 'SESIdentity', {
+                identity: ses.Identity.domain(config.get('buihostedzonestack.sesidentityemailaddress')),
+                dkimIdentity: ses.DkimIdentity.easyDkim(ses.EasyDkimSigningKeyLength.RSA_2048_BIT),
+                dkimSigning: true,
+                feedbackForwarding: true
+            });
+            sesIdentity.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+            cdk.Aspects.of(sesIdentity).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(sesIdentity).add(
+                new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}-SES`)
+            );
+            cdk.Aspects.of(sesIdentity).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+
+            const cnameRecord1 = new CfnRecordSet(this, 'SesCNAMERecord1', {
+                hostedZoneName: `${props.hostedZone.zoneName}.`,
+                name: sesIdentity.dkimDnsTokenName1,
+                type: "CNAME",
+                resourceRecords: [sesIdentity.dkimDnsTokenValue1],
+                ttl: "1800"
+            });
+            cnameRecord1.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            cdk.Aspects.of(cnameRecord1).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(cnameRecord1).add(
+                new cdk.Tag('nelson:role', 'route53-hosted-zone')
+            );
+            cdk.Aspects.of(cnameRecord1).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+
+            const cnameRecord2 = new CfnRecordSet(this, 'SesCNAMERecord2', {
+                hostedZoneName: `${props.hostedZone.zoneName}.`,
+                name: sesIdentity.dkimDnsTokenName2,
+                type: "CNAME",
+                resourceRecords: [sesIdentity.dkimDnsTokenValue2],
+                ttl: "1800"
+            });
+            cnameRecord2.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            cdk.Aspects.of(cnameRecord2).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(cnameRecord2).add(
+                new cdk.Tag('nelson:role', 'route53-hosted-zone')
+            );
+            cdk.Aspects.of(cnameRecord2).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+
+            const cnameRecord3 = new CfnRecordSet(this, 'SesCNAMERecord3', {
+                hostedZoneName: `${props.hostedZone.zoneName}.`,
+                name: sesIdentity.dkimDnsTokenName3,
+                type: "CNAME",
+                resourceRecords: [sesIdentity.dkimDnsTokenValue3],
+                ttl: "1800"
+            });
+            cnameRecord3.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            cdk.Aspects.of(cnameRecord3).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(cnameRecord3).add(
+                new cdk.Tag('nelson:role', 'route53-hosted-zone')
+            );
+            cdk.Aspects.of(cnameRecord3).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+        }
     }
 }
