@@ -1,6 +1,5 @@
 {
     "environmentname": "test-exhibition",
-    "domain": "test-kensingtonstay.nelson.management",
     "hostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
