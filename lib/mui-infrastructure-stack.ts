@@ -107,7 +107,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
             role: muiCodeBuildRole,
             vpc: this.vpc,
             subnetSelection: {
-                subnets: this.vpc.privateSubnets
+                subnets: this.vpc?.privateSubnets
             }
         });
         // Add removal policy for codebuild
@@ -124,7 +124,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
         cdk.Aspects.of(muiCodeBuildProject).add(
             new cdk.Tag('Name', `${config.get('environmentname')}-mui-codebuild`)
         );
-        
+
         const buildAction = new CodeBuildAction({
             actionName: "Build",
             input: sourceOutput,
@@ -147,7 +147,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
                     type: BuildEnvironmentVariableType.PLAINTEXT,
                     value: config.get('muiinfrastructurestack.rootfolder')
                 }
-                
+
             }
         });
 
@@ -165,7 +165,7 @@ export class MuiInfrastructureStack extends cdk.Stack {
             ],
             artifactBucket: new s3.Bucket(this, 'artifactBucket', {
                 autoDeleteObjects: true,
-                bucketName: `${config.get('environmentname')}-muicodepipelineartifact`,
+                bucketName: `${String(config.get('environmentname')).toLowerCase()}-muicodepipelineartifact`,
                 removalPolicy: config.get('defaultremovalpolicy')
             })
         });
