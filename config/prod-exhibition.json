@@ -108,7 +108,9 @@
         "hostedzone": "bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "kensingtonstay.bookn.io"
+        "domain": "kensingtonstay.bookn.io",
+        "useexistingsesidentity": true,
+        "sesidentityemailaddress": "kensingtonstay.com"
     },
     "muihostedzonestack": {
         "hostedzone": "nelson.management",
