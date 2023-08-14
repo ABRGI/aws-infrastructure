@@ -178,6 +178,7 @@ export class NpriceInfrastructureStack extends cdk.Stack {
             description: 'This fucntion checks that the nPrice core is stopped and starts it, otherwise it will sen a notification.',
             environment: {
                 NPRICE_CORE_INSTANCE_ID: npriceCoreInstance.instanceId,
+                NPRICE_CORE_INSTANCE_NAME: config.get('environmentname'),
                 SNS_ARN: config.get('npriceinfrastructurestack.snsarn'),
                 REGION: config.get('npriceinfrastructurestack.region')
             },
