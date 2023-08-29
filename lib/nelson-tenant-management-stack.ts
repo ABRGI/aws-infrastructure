@@ -81,7 +81,9 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             }
         });
         manageTenantPropertiesFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-        this.tenantPropertyBucket.grantReadWrite(manageTenantPropertiesFn);
+        if (config.get('nelsontenantmanagementservicetack.createbucket')) {
+            this.tenantPropertyBucket.grantReadWrite(manageTenantPropertiesFn);
+        }
 
         this.tenantManagementServiceApiGw = new apigw.LambdaRestApi(this, 'TenantManagementServiceApi', {
             handler: listTenantFn,
@@ -153,15 +155,17 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
         cdk.Aspects.of(this.tenantManagementServiceApiGw).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
-        cdk.Aspects.of(this.tenantPropertyBucket).add(
-            new cdk.Tag('nelson:client', `saas`)
-        );
-        cdk.Aspects.of(this.tenantPropertyBucket).add(
-            new cdk.Tag('nelson:role', 'tenant-management-service')
-        );
-        cdk.Aspects.of(this.tenantPropertyBucket).add(
-            new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
-        );
+        if (config.get('nelsontenantmanagementservicetack.createbucket')) {
+            cdk.Aspects.of(this.tenantPropertyBucket).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(this.tenantPropertyBucket).add(
+                new cdk.Tag('nelson:role', 'tenant-management-service')
+            );
+            cdk.Aspects.of(this.tenantPropertyBucket).add(
+                new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
+            );
+        }
         cdk.Aspects.of(manageTenantPropertiesFn).add(
             new cdk.Tag('nelson:client', `saas`)
         );

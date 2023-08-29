@@ -21,6 +21,7 @@ import { NelsonManagementHostedZoneStack } from '../lib/nelson-management-hosted
 import { NelsonManagementCloudFrontStack } from '../lib/nelson-management-cloudfront-stack';
 import { MuiInfrastructureStack } from '../lib/mui-infrastructure-stack';
 import { NelsonTenantManagementServiceStack } from '../lib/nelson-tenant-management-stack';
+import { NelsonShortLinksStack } from '../lib/nelson-short-links-stack';
 
 const app = new cdk.App();
 const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('environmentname')}HostedZoneStack`, {
@@ -60,7 +61,13 @@ const tenantManagementServiceStack = new NelsonTenantManagementServiceStack(app,
     },
     userPool: loginProviderStack.nelsonUserPool,
     userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool')
-})
+});
+const shortLinksServiceStack = new NelsonShortLinksStack(app, `${config.get('environmentname')}ShortLinksService`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    },
+});
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,

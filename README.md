@@ -23,10 +23,11 @@ Project uses AWS CDK V2. For list of dependencies, refer the [AWS CDK V2 documen
 - Deploy individual apps by running `NODE_ENV={environment} appscript={target app script name} stack={target stack} npm run deploy -- --profile {aws profile name}`
 - Note that stack name is optional. If non specified, all stacks are built or deployed as part of the app
 - If app is not specified, then the default app specified in cdk.json is used
-- Similar structure should work for cdk diff
+- Similar structure should work for cdk diff and other commands
 - If default profile should be used, ignore the profile attribute
 - Example code (to diff): `NODE_ENV=test appscript=user-management-service stack=TestLoginProvide npm run diff -- --profile nelson`
 - Use stack=-all to deploy all stacks if the app has multiple stacks: `NODE_ENV=test appscript=user-management-service stack=--all npm run deploy -- --profile nelson`
+- If no stack is specified, all stacks for the app will run
 - run `cdk diff` or `cdk synth` or `cdk deploy` to run for default app specified in cdk.json
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
@@ -39,7 +40,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk deploy`      deploy this stack to your default AWS account/region
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
-* `NODE_ENV={environment} appscript={target app script name} stack={target stack} npm run {diff|synth|deploy|destroy} -- --profile {aws profile name}`       runs the diff, synth, deploy or destroy commands
+* `NODE_ENV={environment} appscript={target app script name} [stack={target stack}] npm run {diff|synth|deploy|destroy} -- --profile {aws profile name}`       runs the diff, synth, deploy or destroy commands
 
 ## Notes
 

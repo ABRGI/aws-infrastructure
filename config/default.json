@@ -66,5 +66,9 @@
             }
         },
         "databasename": "saas-nelson-services-db-cluster"
+    },
+    "nelsonshortlinksservicestack": {
+        "linktable": "nelson-shortlinks",
+        "tenantlinkstable": "nelson-tenant-shortlinks"
     }
 }
