@@ -1,6 +1,5 @@
 {
-    "environmentname": "Test",
-    "domain": "test.nelson.management",
+    "environmentname": "prod-exhibition",
     "hostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
@@ -28,7 +27,7 @@
     "useexistingvpc": false,
     "existingvpcname": "",
     "vpcservice": {
-        "cidr": "17.0.0.0/16",
+        "cidr": "18.0.0.0/16",
         "maxnatgateways": 1,
         "maxazs": 2,
         "cidrMask": 20
@@ -39,52 +38,39 @@
     "fargateclustersgid": "",
     "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
     "buiinfrastructurestack": {
-        "bucketname": "test-bui.nelson.management",
+        "bucketname": "kensingtonstay.bookn.io",
         "useexistingbuibucket": false,
         "publicreadaccess": true,
-        "hotelbuild": "demo",
+        "hotelbuild": "exhibition",
         "locales": "fi, en, et, ru, sv",
-        "hotelchainname": "DemoHotels",
+        "hotelchainname": "ECHotels",
         "releaseversion": "1.0",
         "repo": "nelson-bui-2.0",
-        "branch": "develop",
+        "branch": "feat/test-exhibition",
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
-        "bucketname": "test.nelson.management",
+        "bucketname": "kensingtonstay.nelson.management",
         "useexistingmuibucket": false,
         "publicreadaccess": true,
         "rootfolder": "management",
-        "hotelbuild": "demo",
+        "hotelbuild": "exhibition",
         "releaseversion": "2.0",
         "repo": "nelson-management-ui",
-        "branch": "develop",
+        "branch": "feat/test-exhibition",
         "owner": "ABRGI"
     },
     "tags": {
-        "nelsonenvironment": "test-saas",
-        "nelsonroleprefix": "test-saas"
+        "nelsonenvironment": "exhibitioncourt",
+        "nelsonroleprefix": "nelson-prod-exhibiton"
     },
     "nelsontenantmanagementservicetack": {
-        "createbucket": true,
-        "tenanttable": "test-nelson-tenants",
-        "bucketname": "test-nelson-tenant-properties",
-        "publicreadaccess": true
+        "createbucket": false,
+        "tenanttable": "test-nelson-tenants"
     },
     "rdssnapshotexportpipelinestack": {
         "bucket": {
             "namepostfix": "rds-snapshot-backup",
-            "autoDeleteObjects": true,
-            "publicreadaccess": false,
-            "blockpublicaccess": {
-                "blockpublicacls": true,
-                "blockpublicpolicy": true,
-                "ignorepublicacls": true,
-                "restrictpublicbuckets": true
-            }
-        },
-        "resultbucket": {
-            "namepostfix": "etl-result",
             "autoDeleteObjects": true,
             "publicreadaccess": false,
             "blockpublicaccess": {
@@ -104,46 +90,51 @@
             "repo": "SNAPSHOT",
             "hostport": "8080",
             "serviceport": "8080",
-            "cpu": "512",
-            "memory": "2048"
+            "cpu": "1024",
+            "memory": "4096"
         },
-        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/41ef7c6e-f3f4-473b-9b73-4d3110f60575",
+        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/b63d1061-8540-448c-ac4c-4b665703f37e",
         "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
         "nelsonrepo": "nelson",
         "nelsondeploymentrepo": "nelson-deployment",
-        "nelsonbranch": "develop",
-        "nelsondeploymentbranch": "develop",
+        "nelsonbranch": "feat/test-exhibition",
+        "nelsondeploymentbranch": "feat/test-exhibition",
         "owner": "ABRGI",
-        "useexistingdb": false,
-        "existingdbvpcid": ""
+        "useexistingdb": true,
+        "existingdbvpcid": "vpc-08b4f8c18b957f2cd"
     },
     "buihostedzonestack": {
-        "hostedzone": "test-bui.bookn.io",
+        "useclientdomain": true,
+        "hostedzone": "bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test.bookn.io",
+        "domain": "kensingtonstay.bookn.io",
         "useexistingsesidentity": true,
-        "sesidentityemailaddress": "bookn.io"
+        "sesidentityemailaddress": "kensingtonstay.com"
     },
     "muihostedzonestack": {
-        "hostedzone": "test.nelson.management",
+        "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test.nelson.management"
+        "domain": "kensingtonstay.nelson.management"
     },
     "tenantproperties": {
-        "bucketname": "nelson-tenant-properties.s3.eu-central-1.amazonaws.com",
-        "originpath": "/DemoHotels/Prod-Demo",
+        "originpath": "/ECHotels/prod-exhibition",
         "pathpattern": "/*-config.json"
     },
     "npriceinfrastructurestack": {
-        "issupportednprice": "true",
+        "issupportednprice": "false",
         "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
         "region": "eu-central-1"
     },
     "clientwebsite": {
         "enabled": true,
-        "bucketname": "",
-        "indexdocument": "index.html"
+        "createnewsubdomaincertificate": false,
+        "certificatedomain": "kensingtonstay.com",
+        "hostedzone": "kensongtonstay.com",
+        "domain": "kensingtonstay.com",
+        "bucketname": "kensingtonstay.com",
+        "indexdocument": "index.html",
+        "certificatearn": "arn:aws:acm:us-east-1:459045743560:certificate/11c82711-2ce9-4be6-a0ba-3935455e0b13"
     }
 }

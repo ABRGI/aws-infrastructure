@@ -7,18 +7,18 @@ import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as config from 'config';
 import { IpAddresses } from 'aws-cdk-lib/aws-ec2';
+import { Environment } from 'aws-cdk-lib';
 
 export class VpcInfrastructureStack extends cdk.Stack {
-    nelsonVPC: ec2.Vpc;
+    nelsonVpc: ec2.IVpc;
+    albSGId: String;
+    privateSGId: String;
+    env: Environment;
+
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
-
-        const nelsonEnv: string = config.get('environmentname');
-        const nelsonClient = 'saas';
-        const nelsonRole = 'service';
-
-        // Step1: Create a VPC and things related to VPC
-        this.nelsonVPC = new ec2.Vpc(this, `VPC`, {
+        // Create a VPC and things related to VPC
+        this.nelsonVpc = new ec2.Vpc(this, `VPC`, {
             ipAddresses: IpAddresses.cidr(config.get('vpcservice.cidr')),
             maxAzs: Number(config.get('vpcservice.maxazs')),
             natGateways: Number(config.get('vpcservice.maxnatgateways')),
@@ -34,51 +34,55 @@ export class VpcInfrastructureStack extends cdk.Stack {
                     cidrMask: config.get('vpcservice.cidrMask')
                 }
             ],
-            vpcName: `${nelsonEnv}-vpc`,
+            vpcName: `${config.get('environmentname')}-vpc`
         });
-        this.nelsonVPC.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        this.nelsonVpc.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
-        // Step2: Re-tagging for publicSubnets
-        for (const publicSubnet of this.nelsonVPC.publicSubnets) {
+        // Re-tagging for publicSubnets
+        for (const publicSubnet of this.nelsonVpc.publicSubnets) {
             cdk.Aspects.of(publicSubnet).add(
-                new cdk.Tag('Name', `${nelsonEnv}-${publicSubnet.node.id.replace(/Subnet[0-9]$/, '')}-${publicSubnet.availabilityZone}`)
+                new cdk.Tag('Name', `${config.get('environmentname')}-${publicSubnet.node.id.replace(/Subnet[0-9]$/, '')}-${publicSubnet.availabilityZone}`)
             );
             cdk.Aspects.of(publicSubnet).add(
-                new cdk.Tag('nelson:client', nelsonClient)
+                new cdk.Tag('nelson:client', 'saas')
             );
             cdk.Aspects.of(publicSubnet).add(
-                new cdk.Tag('nelson:role', nelsonRole)
+                new cdk.Tag('nelson:role', 'service')
             );
             cdk.Aspects.of(publicSubnet).add(
-                new cdk.Tag('nelson:environment', nelsonEnv)
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
             );
         }
 
-        // Step3: Re-tagging for privateSubnets
-        for (const privateSubnet of this.nelsonVPC.privateSubnets) {
+        // Re-tagging for privateSubnets
+        for (const privateSubnet of this.nelsonVpc.privateSubnets) {
             cdk.Aspects.of(privateSubnet).add(
-                new cdk.Tag('Name', `${nelsonEnv}-${privateSubnet.node.id.replace(/Subnet[0-9]$/, '')}-${privateSubnet.availabilityZone}`)
+                new cdk.Tag('Name', `${config.get('environmentname')}-${privateSubnet.node.id.replace(/Subnet[0-9]$/, '')}-${privateSubnet.availabilityZone}`)
             );
             cdk.Aspects.of(privateSubnet).add(
-                new cdk.Tag('nelson:client', nelsonClient)
+                new cdk.Tag('nelson:client', 'saas')
             );
             cdk.Aspects.of(privateSubnet).add(
-                new cdk.Tag('nelson:role', nelsonRole)
+                new cdk.Tag('nelson:role', 'service')
             );
             cdk.Aspects.of(privateSubnet).add(
-                new cdk.Tag('nelson:environment', nelsonEnv)
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
             );
         }
 
-        //Step4: Re-tagging for VPC
-        cdk.Aspects.of(this.nelsonVPC).add(
-            new cdk.Tag('nelson:client', nelsonClient)
+        // Re-tagging for VPC
+        cdk.Aspects.of(this.nelsonVpc).add(
+            new cdk.Tag('nelson:client', 'saas')
         );
-        cdk.Aspects.of(this.nelsonVPC).add(
-            new cdk.Tag('nelson:role', nelsonRole)
+        cdk.Aspects.of(this.nelsonVpc).add(
+            new cdk.Tag('nelson:role', 'service')
         );
-        cdk.Aspects.of(this.nelsonVPC).add(
-            new cdk.Tag('nelson:environment', nelsonEnv)
+        cdk.Aspects.of(this.nelsonVpc).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
+        cdk.Aspects.of(this.nelsonVpc).add(
+            new cdk.Tag('Name', `${config.get('environmentname')}-vpc`)
+        );
+
     }
 }
