@@ -72,7 +72,7 @@
             "cpu": "1024",
             "memory": "4096"
         },
-        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/b63d1061-8540-448c-ac4c-4b665703f37e",
+        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/c283e061-3d15-4c58-b2c3-cbe56fc785fc",
         "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
         "nelsonrepo": "nelson",
         "nelsondeploymentrepo": "nelson-deployment",
