@@ -150,9 +150,9 @@
     "clientwebsite": {
         "enabled": true,
         "createnewsubdomaincertificate": false,
-        "certificatedomain": "test.kensingtonstay.com",
-        "hostedzone": "kensongtonstay.com",
-        "domain": "test.kensingtonstay.com",
+        "certificatedomain": "nelson.management",
+        "hostedzone": "nelson.management",
+        "domain": "nelson.management",
         "bucketname": "",
         "indexdocument": "index.html",
         "certificatearn": ""

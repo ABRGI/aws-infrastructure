@@ -5,24 +5,7 @@
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true
     },
-    "applicationname": "Test - Nelson Management",
     "existingvpcid": "",
-    "nelsonloginproviderstack": {
-        "nelsonuserpool": "test-nelson-users",
-        "nelsonuserpoolid": "",
-        "guestuserpool": "test-guest-users",
-        "loginprovideremaildomain": "nelson.management",
-        "logincallbackurls": ["https://test.nelson.management/users"],
-        "appname": "nelsonmanagement",
-        "cognitodomainprefix": "testnelsonmanagementlogin",
-        "loginurl": "",
-        "generatesecret": true
-    },
-    "nelsonusermanagementservicetack": {
-        "usertable": "test-user-management-users",
-        "accessrolestable": "test-user-management-access-roles",
-        "newuserpassword": "Welcome@Nelson123"
-    },
     "defaultremovalpolicy": "destroy",
     "useexistingvpc": false,
     "existingvpcname": "",
@@ -46,7 +29,7 @@
         "hotelchainname": "ECHotels",
         "releaseversion": "1.0",
         "repo": "nelson-bui-2.0",
-        "branch": "feature/test-exhibition",
+        "branch": "feature/prod-exhibition",
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
@@ -57,16 +40,12 @@
         "hotelbuild": "exhibition",
         "releaseversion": "2.0",
         "repo": "nelson-management-ui",
-        "branch": "feature/test-exhibition",
+        "branch": "feature/prod-exhibition",
         "owner": "ABRGI"
     },
     "tags": {
         "nelsonenvironment": "exhibitioncourt",
         "nelsonroleprefix": "nelson-prod-exhibiton"
-    },
-    "nelsontenantmanagementservicetack": {
-        "createbucket": false,
-        "tenanttable": "test-nelson-tenants"
     },
     "rdssnapshotexportpipelinestack": {
         "bucket": {
@@ -97,8 +76,8 @@
         "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
         "nelsonrepo": "nelson",
         "nelsondeploymentrepo": "nelson-deployment",
-        "nelsonbranch": "feature/test-exhibition",
-        "nelsondeploymentbranch": "feature/test-exhibition",
+        "nelsonbranch": "feature/prod-exhibition",
+        "nelsondeploymentbranch": "feature/prod-exhibition",
         "owner": "ABRGI",
         "useexistingdb": true,
         "existingdbvpcid": "vpc-08b4f8c18b957f2cd"
@@ -129,12 +108,11 @@
     },
     "clientwebsite": {
         "enabled": true,
-        "createnewsubdomaincertificate": false,
+        "createnewsubdomaincertificate": true,
         "certificatedomain": "kensingtonstay.com",
         "hostedzone": "kensingtonstay.com",
         "domain": "kensingtonstay.com",
         "bucketname": "kensingtonstay.com",
-        "indexdocument": "index.html",
-        "certificatearn": "arn:aws:acm:us-east-1:459045743560:certificate/11c82711-2ce9-4be6-a0ba-3935455e0b13"
+        "indexdocument": "index.html"
     }
 }

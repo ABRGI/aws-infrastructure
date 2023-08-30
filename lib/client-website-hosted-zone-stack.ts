@@ -45,8 +45,11 @@ export class ClientWebsiteHostedZoneStack extends cdk.Stack {
                 new cdk.Tag('nelson:environment', config.get('environmentname'))
             );
         }
-        else {
+        else if(config.get('clientwebsite.certificatearn') != ''){
             this.domainCertificate = Certificate.fromCertificateArn(this, 'ExistingClientWebsiteDomainCertificate', config.get('clientwebsite.certificatearn'));
+        }
+        else {
+            throw new Error('Either create a new certificate or specify an existing certificate in the config file');
         }
     }
 }
