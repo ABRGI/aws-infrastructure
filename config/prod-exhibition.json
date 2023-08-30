@@ -46,7 +46,7 @@
         "hotelchainname": "ECHotels",
         "releaseversion": "1.0",
         "repo": "nelson-bui-2.0",
-        "branch": "feat/test-exhibition",
+        "branch": "feature/test-exhibition",
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
@@ -57,7 +57,7 @@
         "hotelbuild": "exhibition",
         "releaseversion": "2.0",
         "repo": "nelson-management-ui",
-        "branch": "feat/test-exhibition",
+        "branch": "feature/test-exhibition",
         "owner": "ABRGI"
     },
     "tags": {
@@ -97,8 +97,8 @@
         "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
         "nelsonrepo": "nelson",
         "nelsondeploymentrepo": "nelson-deployment",
-        "nelsonbranch": "feat/test-exhibition",
-        "nelsondeploymentbranch": "feat/test-exhibition",
+        "nelsonbranch": "feature/test-exhibition",
+        "nelsondeploymentbranch": "feature/test-exhibition",
         "owner": "ABRGI",
         "useexistingdb": true,
         "existingdbvpcid": "vpc-08b4f8c18b957f2cd"
@@ -131,7 +131,7 @@
         "enabled": true,
         "createnewsubdomaincertificate": false,
         "certificatedomain": "kensingtonstay.com",
-        "hostedzone": "kensongtonstay.com",
+        "hostedzone": "kensingtonstay.com",
         "domain": "kensingtonstay.com",
         "bucketname": "kensingtonstay.com",
         "indexdocument": "index.html",
