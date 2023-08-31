@@ -20,7 +20,7 @@ export class NelsonShortLinksStack extends cdk.Stack {
 
         const tenantLinksTable = new dynamodb.Table(this, 'TenantLinksTable', {
             partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },  // TODO: Convert to tenant + environment hash
-            sortKey: {name: 'linkid', type: dynamodb.AttributeType.STRING},
+            sortKey: { name: 'linkid', type: dynamodb.AttributeType.STRING },
             tableClass: dynamodb.TableClass.STANDARD,
             tableName: `${config.get('environmentname')}-${config.get('nelsonshortlinksservicestack.tenantlinkstable')}`,
             removalPolicy: config.get('defaultremovalpolicy'),
@@ -38,9 +38,11 @@ export class NelsonShortLinksStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(3),
             description: 'This function manages the CRUD actions for short links',
             environment: {
+                ENV_REGION: this.region,
                 LINKS_TABLE: linksTable.tableName,
                 TENANT_LINKS_TABLE: tenantLinksTable.tableName,
-                ENV_REGION: this.region
+                ID_LENGTH: config.get("nelsonshortlinksservicestack.linklength"),
+                INCLUDE_TIME_STAMP: config.get("nelsonshortlinksservicestack.usetimestamp"),
             }
         });
         linkManagerFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));

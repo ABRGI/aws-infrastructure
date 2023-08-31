@@ -69,6 +69,8 @@
     },
     "nelsonshortlinksservicestack": {
         "linktable": "nelson-shortlinks",
-        "tenantlinkstable": "nelson-tenant-shortlinks"
+        "tenantlinkstable": "nelson-tenant-shortlinks",
+        "linklength": "5",
+        "usetimestamp": "false"
     }
 }
