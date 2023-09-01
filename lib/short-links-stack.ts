@@ -6,7 +6,7 @@ import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, Distribution, OriginProtocolPolicy, OriginSslPolicy, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CacheHeaderBehavior, CachePolicy, Distribution, OriginProtocolPolicy, OriginRequestPolicy, OriginSslPolicy, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { HttpOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
@@ -169,11 +169,23 @@ export class NelsonShortLinksStack extends cdk.Stack {
                 allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
                 cachePolicy: CachePolicy.CACHING_DISABLED,
                 viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                origin: new HttpOrigin(splitFunctionUrl, {
-                    protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
-                    originSslProtocols: [OriginSslPolicy.TLS_V1_2],
-                    customHeaders: {"nelson-host": config.get('nelsonshortlinksservicestack.domain')}   //When implementing for custom domains, create one distribution per domain and include this in the header. Update with the correct domain
-                }),
+                origin: new S3Origin(errorPagesBucket, {
+                    originId: 'ShortLinksErrorPages'
+                })
+            },
+            additionalBehaviors: {
+                [`${config.get('nelsonshortlinksservicestack.distributionlinkbehaviorpattern')}`]: {
+                    origin: new HttpOrigin(splitFunctionUrl, {
+                        originId: "LinkRedirectFunction",
+                        protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
+                        originSslProtocols: [OriginSslPolicy.TLS_V1_2],
+                        customHeaders: { "nelson-host": config.get('nelsonshortlinksservicestack.domain') }   //When implementing for custom domains, create one distribution per domain and include this in the header. Update with the correct domain
+                    }),
+                    compress: false,
+                    allowedMethods: AllowedMethods.ALLOW_ALL,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    cachePolicy: CachePolicy.CACHING_DISABLED
+                },
             },
             domainNames: [config.get('nelsonshortlinksservicestack.domain')],
             certificate: props.domainCertificate
