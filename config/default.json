@@ -79,6 +79,7 @@
         "cloudfrontbehaviorpattern": "l*",
         "errorpagesbucketname": "nelsonshortlinkserrorpages",
         "createnewsubdomaincertificate": "true",
-        "certificatearn": ""
+        "certificatearn": "",
+        "distributionlinkbehaviorpattern": "/l*"
     }
 }
