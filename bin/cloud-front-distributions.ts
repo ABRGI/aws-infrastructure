@@ -21,7 +21,8 @@ import { NelsonManagementHostedZoneStack } from '../lib/nelson-management-hosted
 import { NelsonManagementCloudFrontStack } from '../lib/nelson-management-cloudfront-stack';
 import { MuiInfrastructureStack } from '../lib/mui-infrastructure-stack';
 import { NelsonTenantManagementServiceStack } from '../lib/nelson-tenant-management-stack';
-import { NelsonShortLinksStack } from '../lib/nelson-short-links-stack';
+import { NelsonShortLinksStack } from '../lib/short-links-stack';
+import { ShortLinksHostedZoneStack } from '../lib/short-links-hosted-zone-stack';
 
 const app = new cdk.App();
 const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('environmentname')}HostedZoneStack`, {
@@ -62,11 +63,20 @@ const tenantManagementServiceStack = new NelsonTenantManagementServiceStack(app,
     userPool: loginProviderStack.nelsonUserPool,
     userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool')
 });
+const shortLinksHostedZoneStack = new ShortLinksHostedZoneStack(app, `${config.get('environmentname')}ShortLinksHostedZone`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: 'us-east-1' //Certificate of the hosted zone needs to be in N. Virginia. Hosted zones are global anyway
+    }
+});
 const shortLinksServiceStack = new NelsonShortLinksStack(app, `${config.get('environmentname')}ShortLinksService`, {
+    hostedZone: shortLinksHostedZoneStack.hostedZone,
+    domainCertificate: shortLinksHostedZoneStack.domainCertificate,
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
     },
+    crossRegionReferences: true
 });
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {
