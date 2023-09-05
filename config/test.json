@@ -65,7 +65,7 @@
         "databasename": "saas-nelson-services-db-cluster"
     },
     "nelsonshortlinksservicestack": {
-        "domain": "testlink.bookn.io",
+        "domain": "t.n3l.io",
         "errorpagesbucketname": "testnelsonshortlinkserrorpages"
     }
 }

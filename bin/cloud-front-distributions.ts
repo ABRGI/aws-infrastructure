@@ -21,8 +21,9 @@ import { NelsonManagementHostedZoneStack } from '../lib/nelson-management-hosted
 import { NelsonManagementCloudFrontStack } from '../lib/nelson-management-cloudfront-stack';
 import { MuiInfrastructureStack } from '../lib/mui-infrastructure-stack';
 import { NelsonTenantManagementServiceStack } from '../lib/nelson-tenant-management-stack';
-import { NelsonShortLinksStack } from '../lib/short-links-stack';
-import { ShortLinksHostedZoneStack } from '../lib/short-links-hosted-zone-stack';
+import { NelsonShortLinksStack } from '../lib/short-links/short-links-stack';
+import { ShortLinksHostedZoneStack } from '../lib/short-links/short-links-hosted-zone-stack';
+import { NelsonShortLinksCloudFrontStack } from '../lib/short-links/short-links-cloudfront-distributions';
 
 const app = new cdk.App();
 const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('environmentname')}HostedZoneStack`, {
@@ -70,8 +71,15 @@ const shortLinksHostedZoneStack = new ShortLinksHostedZoneStack(app, `${config.g
     }
 });
 const shortLinksServiceStack = new NelsonShortLinksStack(app, `${config.get('environmentname')}ShortLinksService`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    }
+});
+const shortlinksCFDistribution = new NelsonShortLinksCloudFrontStack(app, `${config.get('environmentname')}ShortLinksCloudFrontDistributions`, {
     hostedZone: shortLinksHostedZoneStack.hostedZone,
     domainCertificate: shortLinksHostedZoneStack.domainCertificate,
+    redirectSvcFunction: shortLinksServiceStack.redirectSvcFunction,
     env: {
         account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION

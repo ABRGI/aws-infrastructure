@@ -73,13 +73,11 @@
         "tenantlinkstable": "nelson-tenant-shortlinks",
         "linklength": "5",
         "usetimestamp": "false",
-        "domain": "bookn.io",
-        "hostedzone": "bookn.io",
-        "domaincertificatearn": "arn:aws:acm:us-east-1:459045743560:certificate/cde50588-ce14-498a-bff5-15f3198bc20c",
-        "cloudfrontbehaviorpattern": "l*",
+        "domain": "n3l.io",
+        "hostedzone": "n3l.io",
+        "domaincertificatearn": "",
         "errorpagesbucketname": "nelsonshortlinkserrorpages",
         "createnewsubdomaincertificate": "true",
-        "certificatearn": "",
-        "distributionlinkbehaviorpattern": "/l*"
+        "certificatearn": ""
     }
 }
