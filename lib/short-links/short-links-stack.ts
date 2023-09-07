@@ -88,6 +88,11 @@ export class NelsonShortLinksStack extends cdk.Stack {
         this.redirectSvcFunction.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         linksTable.grantReadWriteData(this.redirectSvcFunction);
 
+        // Add this as output to the stack so another deployment tool can pick this up
+        new cdk.CfnOutput(this, 'ShortLinksManagerFunctionArn', {
+            value: linkManagerFn.functionArn,
+        });
+
         cdk.Aspects.of(linkManagerFn).add(
             new cdk.Tag('nelson:client', config.get('environmentname'))
         );
