@@ -14,7 +14,7 @@
         "guestuserpool": "test-guest-users",
         "loginprovideremaildomain": "nelson.management",
         "logincallbackurls": ["https://test.nelson.management/users"],
-        "appname": "nelsonmanagement",
+        "appname": "test-nelsonmanagement",
         "cognitodomainprefix": "testnelsonmanagementlogin",
         "loginurl": "",
         "generatesecret": true

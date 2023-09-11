@@ -12,11 +12,10 @@
 
 import * as config from 'config';
 import * as cdk from 'aws-cdk-lib';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
-import { ClientAttributes, OAuthScope } from 'aws-cdk-lib/aws-cognito';
+import { AccountRecovery, ClientAttributes, OAuthScope, UserPool, UserPoolEmail, UserPoolOperation } from 'aws-cdk-lib/aws-cognito';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 export class NelsonLoginProviderStack extends cdk.Stack {
@@ -28,9 +27,9 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         super(scope, id, props);
 
         //Step 1: Create the user pool
-        this.nelsonUserPool = new cognito.UserPool(this, 'NelsonUserPool', {
-            accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-            email: cognito.UserPoolEmail.withSES({
+        this.nelsonUserPool = new UserPool(this, 'NelsonUserPool', {
+            accountRecovery: AccountRecovery.EMAIL_ONLY,
+            email: UserPoolEmail.withSES({
                 fromEmail: `noreply@${config.get('nelsonloginproviderstack.loginprovideremaildomain')}`,
                 fromName: config.get('applicationname'),
                 sesVerifiedDomain: config.get('nelsonloginproviderstack.loginprovideremaildomain')
@@ -115,7 +114,7 @@ export class NelsonLoginProviderStack extends cdk.Stack {
         });
 
         //Step 3: Add trigger to userpool
-        this.nelsonUserPool.addTrigger(cognito.UserPoolOperation.PRE_TOKEN_GENERATION, preTokenGeneratorFn);
+        this.nelsonUserPool.addTrigger(UserPoolOperation.PRE_TOKEN_GENERATION, preTokenGeneratorFn);
 
         //Step 4: Add permissions to the pretokengenerator function to access the correct Dynamo DB tables
         const userTable = dynamodb.Table.fromTableName(this, 'usertable', config.get('nelsonusermanagementservicetack.usertable'));
