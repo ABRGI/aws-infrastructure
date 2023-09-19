@@ -1,34 +1,16 @@
 {
-    "environmentname": "Test",
-    "domain": "test.nelson.management",
+    "environmentname": "prod-exhibition",
     "hostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true
     },
-    "applicationname": "Test - Nelson Management",
     "existingvpcid": "",
-    "nelsonloginproviderstack": {
-        "nelsonuserpool": "test-nelson-users",
-        "nelsonuserpoolid": "",
-        "guestuserpool": "test-guest-users",
-        "loginprovideremaildomain": "nelson.management",
-        "logincallbackurls": ["https://test.nelson.management/users"],
-        "appname": "test-nelsonmanagement",
-        "cognitodomainprefix": "testnelsonmanagementlogin",
-        "loginurl": "",
-        "generatesecret": true
-    },
-    "nelsonusermanagementservicetack": {
-        "usertable": "test-user-management-users",
-        "accessrolestable": "test-user-management-access-roles",
-        "newuserpassword": "Welcome@Nelson123"
-    },
     "defaultremovalpolicy": "destroy",
     "useexistingvpc": false,
     "existingvpcname": "",
     "vpcservice": {
-        "cidr": "17.0.0.0/16",
+        "cidr": "18.0.0.0/16",
         "maxnatgateways": 1,
         "maxazs": 2,
         "cidrMask": 20
@@ -39,37 +21,31 @@
     "fargateclustersgid": "",
     "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
     "buiinfrastructurestack": {
-        "bucketname": "test-bui.nelson.management",
+        "bucketname": "kensingtonstay.bookn.io",
         "useexistingbuibucket": false,
         "publicreadaccess": true,
-        "hotelbuild": "demo",
+        "hotelbuild": "exhibition",
         "locales": "fi, en, et, ru, sv",
-        "hotelchainname": "DemoHotels",
+        "hotelchainname": "ECHotels",
         "releaseversion": "1.0",
         "repo": "nelson-bui-2.0",
-        "branch": "develop",
+        "branch": "feature/prod-exhibition",
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
-        "bucketname": "test.nelson.management",
+        "bucketname": "kensingtonstay.nelson.management",
         "useexistingmuibucket": false,
         "publicreadaccess": true,
         "rootfolder": "management",
-        "hotelbuild": "demo",
+        "hotelbuild": "exhibition",
         "releaseversion": "2.0",
         "repo": "nelson-management-ui",
-        "branch": "develop",
+        "branch": "feature/prod-exhibition",
         "owner": "ABRGI"
     },
     "tags": {
-        "nelsonenvironment": "test-saas",
-        "nelsonroleprefix": "test-saas"
-    },
-    "nelsontenantmanagementservicetack": {
-        "createbucket": true,
-        "tenanttable": "test-nelson-tenants",
-        "bucketname": "test-nelson-tenant-properties",
-        "publicreadaccess": true
+        "nelsonenvironment": "exhibitioncourt",
+        "nelsonroleprefix": "nelson-prod-exhibiton"
     },
     "rdssnapshotexportpipelinestack": {
         "bucket": {
@@ -85,10 +61,6 @@
         },
         "databasename": "saas-nelson-services-db-cluster"
     },
-    "nelsonshortlinksservicestack": {
-        "domain": "t.n3l.io",
-        "errorpagesbucketname": "testnelsonshortlinkserrorpages"
-    },
     "saasinfrastructurestack": {
         "codebuildenvvariables": {
             "appname": "nelson",
@@ -97,46 +69,50 @@
             "repo": "SNAPSHOT",
             "hostport": "8080",
             "serviceport": "8080",
-            "cpu": "512",
-            "memory": "2048"
+            "cpu": "1024",
+            "memory": "4096"
         },
-        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/41ef7c6e-f3f4-473b-9b73-4d3110f60575",
+        "buidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/c283e061-3d15-4c58-b2c3-cbe56fc785fc",
         "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
         "nelsonrepo": "nelson",
         "nelsondeploymentrepo": "nelson-deployment",
-        "nelsonbranch": "develop",
-        "nelsondeploymentbranch": "develop",
+        "nelsonbranch": "feature/prod-exhibition",
+        "nelsondeploymentbranch": "feature/prod-exhibition",
         "owner": "ABRGI",
-        "useexistingdb": false,
-        "existingdbvpcid": ""
+        "useexistingdb": true,
+        "existingdbvpcid": "vpc-08b4f8c18b957f2cd"
     },
     "buihostedzonestack": {
-        "hostedzone": "test-bui.bookn.io",
+        "useclientdomain": true,
+        "hostedzone": "bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test.bookn.io",
+        "domain": "kensingtonstay.bookn.io",
         "useexistingsesidentity": true,
-        "sesidentityemailaddress": "bookn.io"
+        "sesidentityemailaddress": "kensingtonstay.com"
     },
     "muihostedzonestack": {
-        "hostedzone": "test.nelson.management",
+        "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test.nelson.management"
+        "domain": "kensingtonstay.nelson.management"
     },
     "tenantproperties": {
-        "bucketname": "nelson-tenant-properties.s3.eu-central-1.amazonaws.com",
-        "originpath": "/DemoHotels/Prod-Demo",
+        "originpath": "/ECHotels/prod-exhibition",
         "pathpattern": "/*-config.json"
     },
     "npriceinfrastructurestack": {
-        "issupportednprice": "true",
+        "issupportednprice": "false",
         "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
         "region": "eu-central-1"
     },
     "clientwebsite": {
         "enabled": true,
-        "bucketname": "",
+        "createnewsubdomaincertificate": true,
+        "certificatedomain": "kensingtonstay.com",
+        "hostedzone": "kensingtonstay.com",
+        "domain": "kensingtonstay.com",
+        "bucketname": "kensingtonstay.com",
         "indexdocument": "index.html"
     }
 }
