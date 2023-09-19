@@ -1,7 +1,6 @@
 {
     "environmentname": "omena",
     "applicationame": "Omena",
-    "domain": "www.omenahotels.com",
     "vpcservice": {
         "cidr": "17.0.0.0/16",
         "maxnatgateways": 1,
