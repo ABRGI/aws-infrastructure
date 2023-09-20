@@ -80,7 +80,8 @@
         "nelsondeploymentbranch": "feature/prod-exhibition",
         "owner": "ABRGI",
         "useexistingdb": true,
-        "existingdbvpcid": "vpc-08b4f8c18b957f2cd"
+        "existingdbvpcid": "vpc-08b4f8c18b957f2cd",
+        "shortlinklambdaarn": "*"
     },
     "buihostedzonestack": {
         "useclientdomain": true,
