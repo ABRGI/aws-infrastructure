@@ -365,7 +365,6 @@ export class SaasInfrastructureStack extends cdk.Stack {
             new cdk.Tag('Name', `${config.get('environmentname')}-task-definition`)
         );
         
-        console.log('shortlinklambdaarn: ' + config.get('saasinfrastructurestack.shortlinklambdaarn'));
         const ecsTaskRolePolicy = new iam.PolicyStatement({
             actions: [
                 'lambda:InvokeFunction'
@@ -373,12 +372,12 @@ export class SaasInfrastructureStack extends cdk.Stack {
             resources: [config.get('saasinfrastructurestack.shortlinklambdaarn')]
         });
 
-        const taskRole = new iam.Role(this, 'ECSTaskRole', {
+        const ecsTaskRole = new iam.Role(this, 'ECSTaskRole', {
             roleName: `${config.get('environmentname')}-task-role`,
             assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com')
         });
-        taskRole.addToPolicy(ecsTaskRolePolicy);
-        taskRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        ecsTaskRole.addToPolicy(ecsTaskRolePolicy);
+        ecsTaskRole.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         
 
         const ecsService = new EcsService(this, 'EcsService', {
