@@ -16,7 +16,7 @@ export interface BuiCloudFrontStackProps extends cdk.StackProps {
     viewerAcmCertificateArn: string,
     buiBucket: IBucket,
     loadBalancer: ApplicationLoadBalancer,
-    clientWebsiteBucket?: IBucket,
+    clientWebsiteBucket?: IBucket
 }
 
 export class BuiCloudFrontStack extends cdk.Stack {
@@ -42,6 +42,21 @@ export class BuiCloudFrontStack extends cdk.Stack {
             originRequestPolicyName: `${config.get('environmentname')}OriginRequestPolicy`
         });
         originCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        var pricingBehaviorCachePolicy = new CachePolicy(this, "PricingBehaviorManagementCachePolicy", {
+            cachePolicyName: `${config.get('environmentname')}PricingBehaviorCachePolicy`,
+            defaultTtl: Duration.seconds(300),  //Required in order to allow authorization header pass through
+            minTtl: Duration.seconds(600),
+            maxTtl: Duration.seconds(1),
+            headerBehavior: CacheHeaderBehavior.allowList('Host'),
+            queryStringBehavior: OriginRequestQueryStringBehavior.all()
+        });
+        pricingBehaviorCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        var pricingOriginCachePolicy = new OriginRequestPolicy(this, "PricingOriginReqestCachePolicy", {
+            queryStringBehavior: OriginRequestQueryStringBehavior.all(),
+            originRequestPolicyName: `${config.get('environmentname')}PricingOriginRequestPolicy`,
+            headerBehavior: CacheHeaderBehavior.allowList('Host')
+        });
+        pricingOriginCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         //Define the different origins
         const userManagementApiOrigin = new HttpOrigin(config.get('nelsonmanagementservice.userserviceapigatewayurl'), {
             originId: "UserManagement",
@@ -57,6 +72,9 @@ export class BuiCloudFrontStack extends cdk.Stack {
         });
         const buiBucketSource = new S3Origin(props.buiBucket, {
             originId: "BUIBucket"
+        });
+        const saasAPI = new LoadBalancerV2Origin(props.loadBalancer, {
+            originId: 'SaasAPI',
         });
         //Step 1: Create cloudfront distribution
         const buiCFDistribution = new Distribution(this, 'BuiCFDistribution', {
@@ -86,10 +104,24 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     cachePolicy: behaviorCachePolicy,
                     originRequestPolicy: originCachePolicy,
                 },
+                '/api/prices/*/*': {
+                    origin: saasAPI,
+                    compress: false,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+                    cachePolicy: pricingBehaviorCachePolicy,
+                    originRequestPolicy: pricingOriginCachePolicy,
+                },
+                '/api/m_app/prices/*/*': {
+                    origin: saasAPI,
+                    compress: false,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+                    cachePolicy: pricingBehaviorCachePolicy,
+                    originRequestPolicy: pricingOriginCachePolicy,
+                },
                 '/api/*': {
-                    origin: new LoadBalancerV2Origin(props.loadBalancer, {
-                        originId: 'SaasAPI',
-                    }),
+                    origin: saasAPI,
                     compress: false,
                     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     originRequestPolicy: OriginRequestPolicy.ALL_VIEWER,
@@ -97,14 +129,6 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     cachePolicy: CachePolicy.CACHING_DISABLED
                 },
                 '/*-config.json': {
-                    origin: tenantPropertiesOrigin,
-                    compress: false,
-                    allowedMethods: AllowedMethods.ALLOW_ALL,
-                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                    cachePolicy: behaviorCachePolicy,
-                    originRequestPolicy: originCachePolicy,
-                },
-                '/config.txt': {
                     origin: tenantPropertiesOrigin,
                     compress: false,
                     allowedMethods: AllowedMethods.ALLOW_ALL,
