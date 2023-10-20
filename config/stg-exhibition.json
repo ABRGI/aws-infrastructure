@@ -1,11 +1,11 @@
 {
-    "environmentname": "test-exhibition",
+    "environmentname": "stg-exhibition",
     "hostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true
     },
-    "applicationname": "Test - Nelson Management",
+    "applicationname": "Staging - Nelson Management",
     "existingvpcid": "",
     "nelsonloginproviderstack": {
         "nelsonuserpool": "test-nelson-users",
@@ -29,7 +29,7 @@
     "useexistingvpc": false,
     "existingvpcname": "",
     "vpcservice": {
-        "cidr": "17.0.0.0/16",
+        "cidr": "14.0.0.0/16",
         "maxnatgateways": 1,
         "maxazs": 2,
         "cidrMask": 20
@@ -40,7 +40,7 @@
     "fargateclustersgid": "",
     "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
     "buiinfrastructurestack": {
-        "bucketname": "test-kensingtonstay.bookn.io",
+        "bucketname": "stg-kensingtonstay.bookn.io",
         "useexistingbuibucket": false,
         "publicreadaccess": true,
         "hotelbuild": "exhibition",
@@ -52,19 +52,19 @@
         "owner": "ABRGI"
     },
     "muiinfrastructurestack": {
-        "bucketname": "test-kensingtonstay.nelson.management",
+        "bucketname": "stg-kensingtonstay.nelson.management",
         "useexistingmuibucket": false,
         "publicreadaccess": true,
         "rootfolder": "management",
         "hotelbuild": "exhibition",
         "releaseversion": "2.0",
         "repo": "nelson-management-ui",
-        "branch": "feature/test-exhibition-env",
+        "branch": "develop",
         "owner": "ABRGI"
     },
     "tags": {
-        "nelsonenvironment": "test-exhibition",
-        "nelsonroleprefix": "nelson-test-exhibiton"
+        "nelsonenvironment": "stg-exhibition",
+        "nelsonroleprefix": "nelson-stg-exhibiton"
     },
     "nelsontenantmanagementservicetack": {
         "createbucket": false,
@@ -82,7 +82,7 @@
                 "restrictpublicbuckets": true
             }
         },
-        "databasename": "saas-nelson-services-db-cluster"
+        "databasename": "stg-saas-nelson-services-db-cluster"
     },
     "saasinfrastructurestack": {
         "codebuildenvvariables": {
@@ -99,11 +99,11 @@
         "muidomaincertificatearn": "arn:aws:acm:eu-central-1:459045743560:certificate/46de49f0-b862-480b-a7bd-504640e8b845",
         "nelsonrepo": "nelson",
         "nelsondeploymentrepo": "nelson-deployment",
-        "nelsonbranch": "feature/SAAS-621-setup-exhibition-env",
-        "nelsondeploymentbranch": "feature/test-exhibition-env",
+        "nelsonbranch": "develop",
+        "nelsondeploymentbranch": "develop",
         "owner": "ABRGI",
         "useexistingdb": true,
-        "existingdbvpcid": "vpc-03de42d39c4562987",
+        "existingdbvpcid": "vpc-02d8dbc62bb251f0c",
         "shortlinklambdaarn": "arn:aws:lambda:eu-central-1:459045743560:function:TestShortLinksManager"
     },
     "buihostedzonestack": {
@@ -111,18 +111,18 @@
         "hostedzone": "bookn.io",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test-kensingtonstay.bookn.io",
-        "useexistingsesidentity": false,
+        "domain": "stg-kensingtonstay.bookn.io",
+        "useexistingsesidentity": true,
         "sesidentityemailaddress": "kensingtonstay.com"
     },
     "muihostedzonestack": {
         "hostedzone": "nelson.management",
         "createnewsubdomaincertificate": true,
         "createnelsonmanagementcloudfrontentry": true,
-        "domain": "test-kensingtonstay.nelson.management"
+        "domain": "stg-kensingtonstay.nelson.management"
     },
     "tenantproperties": {
-        "originpath": "/ECHotels/test-exhibition",
+        "originpath": "/ECHotels/stg-exhibition",
         "pathpattern": "/*-config.json"
     },
     "npriceinfrastructurestack": {
@@ -136,10 +136,10 @@
     "clientwebsite": {
         "enabled": true,
         "createnewsubdomaincertificate": false,
-        "certificatedomain": "test.kensingtonstay.com",
+        "certificatedomain": "stg.kensingtonstay.com",
         "hostedzone": "kensingtonstay.com",
-        "domain": "test.kensingtonstay.com",
-        "bucketname": "test.kensingtonstay.com",
+        "domain": "stg.kensingtonstay.com",
+        "bucketname": "stg.kensingtonstay.com",
         "indexdocument": "index.html",
         "certificatearn": "arn:aws:acm:us-east-1:459045743560:certificate/11c82711-2ce9-4be6-a0ba-3935455e0b13"
     }
