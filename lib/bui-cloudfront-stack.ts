@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, Distribution, OriginProtocolPolicy, OriginRequestPolicy, OriginRequestQueryStringBehavior, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
-import { ARecord, CfnRecordSet, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { ARecord, CfnRecordSet, CnameRecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { Duration } from 'aws-cdk-lib';
@@ -181,13 +181,23 @@ export class BuiCloudFrontStack extends cdk.Stack {
 
         var aRecordName = useClientDomain ? (String(config.get('clientwebsite.domain')).split(`.${config.get('clientwebsite.hostedzone')}`)[0]) : (String(config.get('buihostedzonestack.domain')).split(`.${config.get('buihostedzonestack.hostedzone')}`)[0]);
         //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
-        new ARecord(this, 'NelsonBuiCloudFrontARecord', {
+        var aRecord = new ARecord(this, 'NelsonBuiCloudFrontARecord', {
             zone: props.hostedZone,
             recordName: aRecordName,
             comment: useClientDomain ? props.clientWebsiteBucket!.bucketName : props.buiBucket.bucketName,
             ttl: Duration.minutes(5),
             target: RecordTarget.fromAlias(new CloudFrontTarget(buiCFDistribution))
-        }).applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        });
+        aRecord.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(aRecord).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(aRecord).add(
+            new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}`)
+        );
+        cdk.Aspects.of(aRecord).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
 
         //Tag the cloudfront distribution
         cdk.Aspects.of(buiCFDistribution).add(
@@ -199,6 +209,26 @@ export class BuiCloudFrontStack extends cdk.Stack {
         cdk.Aspects.of(buiCFDistribution).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
+
+        if (config.get('clientwebsite.usewwwdomain') == true) {
+            var wwwRecord = new CnameRecord(this, "BuiWWWDomain", {
+                domainName: config.get('clientwebsite.domain'),
+                zone: props.hostedZone,
+                recordName: `www.${config.get('clientwebsite.domain')}`,
+                comment: `www.${config.get('clientwebsite.domain')}`,
+                ttl: Duration.seconds(1800),
+            });
+            wwwRecord.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            cdk.Aspects.of(wwwRecord).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(wwwRecord).add(
+                new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}`)
+            );
+            cdk.Aspects.of(wwwRecord).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+        }
 
         // Create SES configuration
         if (!config.get('buihostedzonestack.useexistingsesidentity')) {

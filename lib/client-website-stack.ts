@@ -3,7 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
-import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { ARecord, CnameRecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontAllowedMethods, CloudFrontWebDistribution, OriginProtocolPolicy, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { Duration } from 'aws-cdk-lib';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
@@ -54,6 +54,10 @@ export class ClientWebsiteStack extends cdk.Stack {
 
         //Use a new distribution only if BUI is not on the same distribution
         if (config.get('buihostedzonestack.useclientdomain') == false) {
+            var domainNames: string[] = [config.get('clientwebsite.domain')];
+            if (config.get('clientwebsite.usewwwdomain') == true) {
+                domainNames.push(`www.${config.get('clientwebsite.domain')}`);
+            }
             this.websiteCfDistribution = new CloudFrontWebDistribution(this, 'ClientWebsiteCFDistribution', {
                 comment: config.get('clientwebsite.domain'),
                 originConfigs: [
@@ -89,19 +93,29 @@ export class ClientWebsiteStack extends cdk.Stack {
                     },
                 ],
                 viewerCertificate: ViewerCertificate.fromAcmCertificate(certificate, {
-                    aliases: [config.get('clientwebsite.domain')]
+                    aliases: domainNames
                 })
             });
             this.websiteCfDistribution.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
             //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
-            new ARecord(this, 'ClientWebsiteCloudFrontARecord', {
+            var aRecord = new ARecord(this, 'ClientWebsiteCloudFrontARecord', {
                 zone: props.hostedZone,
                 recordName: String(config.get('clientwebsite.domain')).split(`.${config.get('clientwebsite.hostedzone')}`)[0],  //Get only the subdomain value
                 comment: config.get('clientwebsite.domain'),
                 ttl: Duration.minutes(5),
                 target: RecordTarget.fromAlias(new CloudFrontTarget(this.websiteCfDistribution))
-            }).applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            });
+            aRecord.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            cdk.Aspects.of(aRecord).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(aRecord).add(
+                new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}`)
+            );
+            cdk.Aspects.of(aRecord).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
 
             //Tag the cloudfront distribution
             cdk.Aspects.of(this.websiteCfDistribution).add(
@@ -113,6 +127,26 @@ export class ClientWebsiteStack extends cdk.Stack {
             cdk.Aspects.of(this.websiteCfDistribution).add(
                 new cdk.Tag('nelson:environment', config.get('environmentname'))
             );
+
+            if (config.get('clientwebsite.usewwwdomain') == true) {
+                var wwwRecord = new CnameRecord(this, "BuiWWWDomain", {
+                    domainName: config.get('clientwebsite.domain'),
+                    zone: props.hostedZone,
+                    recordName: `www.${config.get('clientwebsite.domain')}`,
+                    comment: `www.${config.get('clientwebsite.domain')}`,
+                    ttl: Duration.seconds(1800),
+                });
+                wwwRecord.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+                cdk.Aspects.of(wwwRecord).add(
+                    new cdk.Tag('nelson:client', `saas`)
+                );
+                cdk.Aspects.of(wwwRecord).add(
+                    new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}`)
+                );
+                cdk.Aspects.of(wwwRecord).add(
+                    new cdk.Tag('nelson:environment', config.get('environmentname'))
+                );
+            }
         }
     }
 }
