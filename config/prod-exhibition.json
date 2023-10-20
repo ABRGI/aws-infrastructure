@@ -114,6 +114,7 @@
         "hostedzone": "kensingtonstay.com",
         "domain": "kensingtonstay.com",
         "bucketname": "kensingtonstay.com",
-        "indexdocument": "index.html"
+        "indexdocument": "index.html",
+        "usewwwdomain": true
     }
 }

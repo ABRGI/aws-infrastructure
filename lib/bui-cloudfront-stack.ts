@@ -77,6 +77,10 @@ export class BuiCloudFrontStack extends cdk.Stack {
             originId: 'SaasAPI',
         });
         //Step 1: Create cloudfront distribution
+        var domainNames: string[] = [useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain')];
+        if (useClientDomain && config.get('clientwebsite.usewwwdomain') == true) {
+            domainNames.push(`www.${config.get('clientwebsite.domain')}`);
+        }
         const buiCFDistribution = new Distribution(this, 'BuiCFDistribution', {
             comment: useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain'),
             defaultBehavior: {
@@ -169,7 +173,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     originRequestPolicy: originCachePolicy,
                 },
             },
-            domainNames: [useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain')],
+            domainNames: domainNames,
             certificate: certificate
         });
         buiCFDistribution.applyRemovalPolicy(config.get('defaultremovalpolicy'));
