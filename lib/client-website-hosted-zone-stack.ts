@@ -36,6 +36,7 @@ export class ClientWebsiteHostedZoneStack extends cdk.Stack {
             this.domainCertificate = new Certificate(this, 'ClientWebsiteDomainCertificate', {
                 domainName: config.get('clientwebsite.certificatedomain'),
                 validation: CertificateValidation.fromDns(this.hostedZone),
+                subjectAlternativeNames: [`*.${config.get('clientwebsite.certificatedomain')}`],
                 certificateName: `${config.get('environmentname')}ClientDomainCertificate`
             });
             this.domainCertificate.applyRemovalPolicy(config.get('defaultremovalpolicy'));
@@ -45,7 +46,7 @@ export class ClientWebsiteHostedZoneStack extends cdk.Stack {
                 new cdk.Tag('nelson:environment', config.get('environmentname'))
             );
         }
-        else if(config.get('clientwebsite.certificatearn') != ''){
+        else if (config.get('clientwebsite.certificatearn') != '') {
             this.domainCertificate = Certificate.fromCertificateArn(this, 'ExistingClientWebsiteDomainCertificate', config.get('clientwebsite.certificatearn'));
         }
         else {

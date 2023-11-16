@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, Distribution, OriginProtocolPolicy, OriginRequestPolicy, OriginRequestQueryStringBehavior, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
-import { ARecord, CfnRecordSet, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { ARecord, CfnRecordSet, CnameRecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { Duration } from 'aws-cdk-lib';
@@ -16,7 +16,7 @@ export interface BuiCloudFrontStackProps extends cdk.StackProps {
     viewerAcmCertificateArn: string,
     buiBucket: IBucket,
     loadBalancer: ApplicationLoadBalancer,
-    clientWebsiteBucket?: IBucket,
+    clientWebsiteBucket?: IBucket
 }
 
 export class BuiCloudFrontStack extends cdk.Stack {
@@ -42,6 +42,21 @@ export class BuiCloudFrontStack extends cdk.Stack {
             originRequestPolicyName: `${config.get('environmentname')}OriginRequestPolicy`
         });
         originCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        var pricingBehaviorCachePolicy = new CachePolicy(this, "PricingBehaviorManagementCachePolicy", {
+            cachePolicyName: `${config.get('environmentname')}PricingBehaviorCachePolicy`,
+            defaultTtl: Duration.seconds(300),  //Required in order to allow authorization header pass through
+            minTtl: Duration.seconds(600),
+            maxTtl: Duration.seconds(1),
+            headerBehavior: CacheHeaderBehavior.allowList('Host'),
+            queryStringBehavior: OriginRequestQueryStringBehavior.all()
+        });
+        pricingBehaviorCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        var pricingOriginCachePolicy = new OriginRequestPolicy(this, "PricingOriginReqestCachePolicy", {
+            queryStringBehavior: OriginRequestQueryStringBehavior.all(),
+            originRequestPolicyName: `${config.get('environmentname')}PricingOriginRequestPolicy`,
+            headerBehavior: CacheHeaderBehavior.allowList('Host')
+        });
+        pricingOriginCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         //Define the different origins
         const userManagementApiOrigin = new HttpOrigin(config.get('nelsonmanagementservice.userserviceapigatewayurl'), {
             originId: "UserManagement",
@@ -58,7 +73,14 @@ export class BuiCloudFrontStack extends cdk.Stack {
         const buiBucketSource = new S3Origin(props.buiBucket, {
             originId: "BUIBucket"
         });
+        const saasAPI = new LoadBalancerV2Origin(props.loadBalancer, {
+            originId: 'SaasAPI',
+        });
         //Step 1: Create cloudfront distribution
+        var domainNames: string[] = [useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain')];
+        if (useClientDomain && config.get('clientwebsite.usewwwdomain') == true) {
+            domainNames.push(`www.${config.get('clientwebsite.domain')}`);
+        }
         const buiCFDistribution = new Distribution(this, 'BuiCFDistribution', {
             comment: useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain'),
             defaultBehavior: {
@@ -86,10 +108,24 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     cachePolicy: behaviorCachePolicy,
                     originRequestPolicy: originCachePolicy,
                 },
+                '/api/prices/*/*': {
+                    origin: saasAPI,
+                    compress: false,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+                    cachePolicy: pricingBehaviorCachePolicy,
+                    originRequestPolicy: pricingOriginCachePolicy,
+                },
+                '/api/m_app/prices/*/*': {
+                    origin: saasAPI,
+                    compress: false,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+                    cachePolicy: pricingBehaviorCachePolicy,
+                    originRequestPolicy: pricingOriginCachePolicy,
+                },
                 '/api/*': {
-                    origin: new LoadBalancerV2Origin(props.loadBalancer, {
-                        originId: 'SaasAPI',
-                    }),
+                    origin: saasAPI,
                     compress: false,
                     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     originRequestPolicy: OriginRequestPolicy.ALL_VIEWER,
@@ -97,14 +133,6 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     cachePolicy: CachePolicy.CACHING_DISABLED
                 },
                 '/*-config.json': {
-                    origin: tenantPropertiesOrigin,
-                    compress: false,
-                    allowedMethods: AllowedMethods.ALLOW_ALL,
-                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                    cachePolicy: behaviorCachePolicy,
-                    originRequestPolicy: originCachePolicy,
-                },
-                '/config.txt': {
                     origin: tenantPropertiesOrigin,
                     compress: false,
                     allowedMethods: AllowedMethods.ALLOW_ALL,
@@ -145,7 +173,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     originRequestPolicy: originCachePolicy,
                 },
             },
-            domainNames: [useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain')],
+            domainNames: domainNames,
             certificate: certificate
         });
         buiCFDistribution.applyRemovalPolicy(config.get('defaultremovalpolicy'));
@@ -153,13 +181,23 @@ export class BuiCloudFrontStack extends cdk.Stack {
 
         var aRecordName = useClientDomain ? (String(config.get('clientwebsite.domain')).split(`.${config.get('clientwebsite.hostedzone')}`)[0]) : (String(config.get('buihostedzonestack.domain')).split(`.${config.get('buihostedzonestack.hostedzone')}`)[0]);
         //Route domain/sub-domain to cloudfront distribution - Add ARecord in hosted zone
-        new ARecord(this, 'NelsonBuiCloudFrontARecord', {
+        var aRecord = new ARecord(this, 'NelsonBuiCloudFrontARecord', {
             zone: props.hostedZone,
             recordName: aRecordName,
             comment: useClientDomain ? props.clientWebsiteBucket!.bucketName : props.buiBucket.bucketName,
             ttl: Duration.minutes(5),
             target: RecordTarget.fromAlias(new CloudFrontTarget(buiCFDistribution))
-        }).applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        });
+        aRecord.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+        cdk.Aspects.of(aRecord).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(aRecord).add(
+            new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}`)
+        );
+        cdk.Aspects.of(aRecord).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
 
         //Tag the cloudfront distribution
         cdk.Aspects.of(buiCFDistribution).add(
@@ -171,6 +209,26 @@ export class BuiCloudFrontStack extends cdk.Stack {
         cdk.Aspects.of(buiCFDistribution).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
+
+        if (config.get('clientwebsite.usewwwdomain') == true) {
+            var wwwRecord = new CnameRecord(this, "BuiWWWDomain", {
+                domainName: config.get('clientwebsite.domain'),
+                zone: props.hostedZone,
+                recordName: `www.${config.get('clientwebsite.domain')}`,
+                comment: `www.${config.get('clientwebsite.domain')}`,
+                ttl: Duration.seconds(1800),
+            });
+            wwwRecord.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+            cdk.Aspects.of(wwwRecord).add(
+                new cdk.Tag('nelson:client', `saas`)
+            );
+            cdk.Aspects.of(wwwRecord).add(
+                new cdk.Tag('nelson:role', `${config.get('tags.nelsonroleprefix')}`)
+            );
+            cdk.Aspects.of(wwwRecord).add(
+                new cdk.Tag('nelson:environment', config.get('environmentname'))
+            );
+        }
 
         // Create SES configuration
         if (!config.get('buihostedzonestack.useexistingsesidentity')) {

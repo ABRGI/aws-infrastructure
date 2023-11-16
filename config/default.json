@@ -118,7 +118,8 @@
         "nelsondeploymentbranch": "develop",
         "owner": "ABRGI",
         "useexistingdb": false,
-        "existingdbvpcid": ""
+        "existingdbvpcid": "",
+        "shortlinklambdaarn": "*"
     },
     "buihostedzonestack": {
         "useclientdomain": false,
@@ -167,6 +168,7 @@
         "domain": "nelson.management",
         "bucketname": "",
         "indexdocument": "index.html",
-        "certificatearn": ""
+        "certificatearn": "",
+        "usewwwdomain": false
     }
 }
