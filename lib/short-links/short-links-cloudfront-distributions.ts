@@ -6,7 +6,7 @@
 
 import * as cdk from 'aws-cdk-lib';
 import { ICertificate } from "aws-cdk-lib/aws-certificatemanager";
-import { AllowedMethods, CachePolicy, Distribution, OriginProtocolPolicy, OriginSslPolicy, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CachePolicy, Distribution, OriginProtocolPolicy, OriginRequestPolicy, OriginSslPolicy, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { HttpOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { FunctionUrl, FunctionUrlAuthType, HttpMethod, IFunction } from 'aws-cdk-lib/aws-lambda';
@@ -84,7 +84,8 @@ export class NelsonShortLinksCloudFrontStack extends cdk.Stack {
                 compress: false,
                 allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
                 viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                cachePolicy: CachePolicy.CACHING_DISABLED
+                cachePolicy: CachePolicy.CACHING_DISABLED,
+                originRequestPolicy: OriginRequestPolicy.USER_AGENT_REFERER_HEADERS
             },
             additionalBehaviors: {
                 '/error???.html': {
