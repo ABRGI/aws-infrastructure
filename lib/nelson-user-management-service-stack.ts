@@ -61,7 +61,9 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             * Create/update user
             * Create/update roles
             * Get user info
-            * Forgot password
+            * Forgot password/confirm forgot password
+            * Reset password
+            * Change user password
             * Create/update rights (Probably called only from a dev machine)
         */
         const loginFn = new lambda.Function(this, 'LoginFunction', {
@@ -166,7 +168,7 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
             functionName: `${config.get('environmentname')}ResetUserPassword`,
             timeout: cdk.Duration.seconds(3),
-            description: 'This function is used to reset a user password in nelson',
+            description: 'This function is used by an admin to reset a user password in Nelson',
             environment: {
                 ENV_REGION: this.region,
                 USERPOOL_ID: props.userPoolId,
@@ -213,6 +215,69 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         });
         getUserInfoFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
 
+        const changeUserPasswordFn = new lambda.Function(this, 'ChangeUserPasswordFunction', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            architecture: lambda.Architecture.ARM_64,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: `${config.get('environmentname')}ChangeUserPasswordFunction`,
+            timeout: cdk.Duration.seconds(3),
+            description: 'This function is used for the user to change own password',
+            environment: {
+                ENV_REGION: this.region
+            }
+        });
+        changeUserPasswordFn.addToRolePolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ['cognito-idp:ChangePassword'],
+            resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${props.userPoolId}`]
+        }));
+        changeUserPasswordFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+        const forgotUserPasswordFn = new lambda.Function(this, 'ForgotUserPasswordFunction', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            architecture: lambda.Architecture.ARM_64,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: `${config.get('environmentname')}ForgotPasswordFunction`,
+            timeout: cdk.Duration.seconds(3),
+            description: 'This function is used by user to reset a forgotten password in Nelson',
+            environment: {
+                ENV_REGION: this.region,
+                USERPOOL_CLIENT_ID: props.clientId,
+                SECRET_NAME: props.clientSecret.secretName
+            }
+        });
+        props.clientSecret.grantRead(forgotUserPasswordFn);
+        forgotUserPasswordFn.addToRolePolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ['cognito-idp:ForgotPassword'],
+            resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${props.userPoolId}`]
+        }));
+        forgotUserPasswordFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
+        const confirmForgotUserPasswordFn = new lambda.Function(this, 'ConfirmForgotUserPasswordFunction', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            architecture: lambda.Architecture.ARM_64,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: `${config.get('environmentname')}ConfirmForgotPasswordFunction`,
+            timeout: cdk.Duration.seconds(3),
+            description: 'This function is used by user to confirm the forgotten password in Nelson',
+            environment: {
+                ENV_REGION: this.region,
+                USERPOOL_CLIENT_ID: props.clientId,
+                SECRET_NAME: props.clientSecret.secretName
+            }
+        });
+        props.clientSecret.grantRead(confirmForgotUserPasswordFn);
+        confirmForgotUserPasswordFn.addToRolePolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ['cognito-idp:ConfirmForgotPassword'],
+            resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${props.userPoolId}`]
+        }));
+        confirmForgotUserPasswordFn.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
         //Step 3: Grant lambda dynamo permissions
         userTable.grantReadWriteData(updateUserFn);
         userTable.grantReadData(listUsersFn);
@@ -248,18 +313,12 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             authorizer: auth,
             authorizationType: apigw.AuthorizationType.COGNITO
         };
-        const userManagementApiResource = this.userManagementServiceApiGw.root.addResource('api');
-        const userManagementParentResource = userManagementApiResource.addResource('user');
-        const userLoginResource = userManagementParentResource.addResource('login');
-        userLoginResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(loginFn));
-        const userLogoutResource = userManagementParentResource.addResource('logout');
-        userLogoutResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(logoutFn));
-        const confirmUserResource = userManagementParentResource.addResource('confirmuser');
-        confirmUserResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(confirmUserFn));
-        const resetUserResource = userManagementParentResource.addResource('resetpassword');
-        resetUserResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(resetUserPasswordFn), methodOptions);
-        const listUsersResource = userManagementParentResource.addResource('listusers');
-        listUsersResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(listUsersFn), methodOptions);
+        const userManagementParentResource = this.userManagementServiceApiGw.root.addResource('api').addResource('user');
+        userManagementParentResource.addResource('login').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(loginFn));
+        userManagementParentResource.addResource('logout').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(logoutFn));
+        userManagementParentResource.addResource('confirmuser').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(confirmUserFn));
+        userManagementParentResource.addResource('resetpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(resetUserPasswordFn), methodOptions);
+        userManagementParentResource.addResource('listusers').addMethod(HttpMethod.GET, new apigw.LambdaIntegration(listUsersFn), methodOptions);
         const usersResource = userManagementParentResource.addResource('user');
         usersResource.addMethod(HttpMethod.GET, new apigw.LambdaIntegration(getUserInfoFn), methodOptions);
         usersResource.addMethod(HttpMethod.POST, new apigw.LambdaIntegration(updateUserFn), methodOptions);
@@ -267,6 +326,9 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         const updateRoleIntegration = new apigw.LambdaIntegration(updateRoleFn)
         rolesResource.addMethod(HttpMethod.GET, updateRoleIntegration, methodOptions);
         rolesResource.addMethod(HttpMethod.POST, updateRoleIntegration, methodOptions);
+        userManagementParentResource.addResource('userresetpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(changeUserPasswordFn), methodOptions);
+        userManagementParentResource.addResource('forgotpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(forgotUserPasswordFn), methodOptions);
+        userManagementParentResource.addResource('confirmforgotpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(confirmForgotUserPasswordFn), methodOptions);
 
         const userManagementServiceDeployment = new apigw.Deployment(this, 'UserManagementServiceDeployment', {
             api: this.userManagementServiceApiGw,
@@ -375,6 +437,36 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
             new cdk.Tag('nelson:role', `user-management-service`)
         );
         cdk.Aspects.of(getUserInfoFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(changeUserPasswordFn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(changeUserPasswordFn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(changeUserPasswordFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(forgotUserPasswordFn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(forgotUserPasswordFn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(forgotUserPasswordFn).add(
+            new cdk.Tag('nelson:environment', config.get('environmentname'))
+        );
+
+        cdk.Aspects.of(confirmForgotUserPasswordFn).add(
+            new cdk.Tag('nelson:client', `saas`)
+        );
+        cdk.Aspects.of(confirmForgotUserPasswordFn).add(
+            new cdk.Tag('nelson:role', `user-management-service`)
+        );
+        cdk.Aspects.of(confirmForgotUserPasswordFn).add(
             new cdk.Tag('nelson:environment', config.get('environmentname'))
         );
 
