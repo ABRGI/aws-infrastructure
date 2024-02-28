@@ -111,15 +111,14 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     cachePolicy: pricingBehaviorCachePolicy,
                     originRequestPolicy: originCachePolicy,
                 },
-                // TODO: Remove if not used
-                // '/api/m_app/prices/*/*': {
-                //     origin: saasAPI,
-                //     compress: false,
-                //     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                //     allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
-                //     cachePolicy: pricingBehaviorCachePolicy,
-                //     originRequestPolicy: pricingOriginCachePolicy,
-                // },
+                '/api/m_app/prices/*/*': {
+                    origin: saasAPI,
+                    compress: false,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+                    cachePolicy: pricingBehaviorCachePolicy,
+                    originRequestPolicy: originCachePolicy,
+                },
                 '/api/*': {
                     origin: saasAPI,
                     compress: false,
