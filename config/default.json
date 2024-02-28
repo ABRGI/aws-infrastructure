@@ -28,7 +28,7 @@
         "gitrepo": {
             "owner": "ABRGI",
             "repo": "nelson-user-management-service",
-            "branchorref": "develop"
+            "branchorref": "master"
         }
     },
     "defaultremovalpolicy": "destroy",
