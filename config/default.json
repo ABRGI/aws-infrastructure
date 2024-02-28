@@ -24,7 +24,12 @@
     "nelsonusermanagementservicetack": {
         "usertable": "nelson-user-management-users",
         "accessrolestable": "user-management-access-roles",
-        "newuserpassword": "Welcome@Nelson123"
+        "newuserpassword": "Welcome@Nelson123",
+        "gitrepo": {
+            "owner": "ABRGI",
+            "repo": "nelson-user-management-service",
+            "branchorref": "develop"
+        }
     },
     "defaultremovalpolicy": "destroy",
     "useexistingvpc": false,
