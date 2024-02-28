@@ -86,17 +86,17 @@ export class NelsonUserManagementServiceCodebuildStack extends cdk.Stack {
             effect: Effect.ALLOW,
             actions: ['lambda:UpdateFunctionCode'],
             resources: [
-                `arn:aws:lambda:${this.region}:${this.account}:function/${LoginFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${LogoutFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${ListUsersFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${CrudUserFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${ConfirmUserFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${ResetUserPasswordFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${CrudRolesFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${GetUserInfoFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${ChangeUserPasswordFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${ForgotUserPasswordFunctionName}`,
-                `arn:aws:lambda:${this.region}:${this.account}:function/${ConfirmForgotUserPasswordFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${LoginFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${LogoutFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${ListUsersFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${CrudUserFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${ConfirmUserFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${ResetUserPasswordFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${CrudRolesFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${GetUserInfoFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${ChangeUserPasswordFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${ForgotUserPasswordFunctionName}`,
+                `arn:aws:lambda:${this.region}:${this.account}:function:${ConfirmForgotUserPasswordFunctionName}`,
             ]
         })));
     }
