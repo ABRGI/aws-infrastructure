@@ -17,6 +17,8 @@
     },
     "useexistingalbsg": false,
     "albsgId": "",
+    "useexistingalbsd": false,
+    "albsdarn": "",
     "useexistingfargateclustersg": false,
     "fargateclustersgid": "",
     "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",

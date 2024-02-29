@@ -36,6 +36,8 @@
     },
     "useexistingalbsg": false,
     "albsgId": "",
+    "useexistingalbsd": true,
+    "albsdarn": "arn:aws:elasticloadbalancing:eu-central-1:459045743560:loadbalancer/app/test-nelson/aa08b34f55096b17",
     "useexistingfargateclustersg": false,
     "fargateclustersgid": "",
     "connectionarn": "arn:aws:codestar-connections:eu-central-1:459045743560:connection/da8ccc41-f024-4bab-bdca-7996c61a2bb4",
