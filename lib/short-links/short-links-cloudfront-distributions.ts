@@ -109,6 +109,11 @@ export class NelsonShortLinksCloudFrontStack extends cdk.Stack {
                     httpStatus: 403,
                     responseHttpStatus: 403,
                     responsePagePath: '/error403.html'
+                },
+                {
+                    httpStatus: 500,
+                    responseHttpStatus: 500,
+                    responsePagePath: '/error500.html'
                 }
             ],
             domainNames: [config.get('nelsonshortlinksservicestack.domain')],
