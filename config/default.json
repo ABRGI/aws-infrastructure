@@ -104,7 +104,12 @@
         "domaincertificatearn": "",
         "errorpagesbucketname": "nelsonshortlinkserrorpages",
         "createnewsubdomaincertificate": "true",
-        "certificatearn": ""
+        "certificatearn": "",
+        "gitrepo": {
+            "owner": "ABRGI",
+            "repo": "nelson-short-links-service",
+            "branchorref": "master"
+        }
     },
     "saasinfrastructurestack": {
         "codebuildenvvariables": {

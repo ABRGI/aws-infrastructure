@@ -16,6 +16,8 @@ import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
 import * as config from 'config';
 import { Construct } from "constructs";
 
+export const ShortLinksErrorBucketName: string = config.get('nelsonshortlinksservicestack.errorpagesbucketname');
+
 export interface ShortLinksCloudFrontStackProps extends cdk.StackProps {
     hostedZone: IHostedZone,
     domainCertificate: ICertificate,
@@ -28,7 +30,7 @@ export class NelsonShortLinksCloudFrontStack extends cdk.Stack {
 
         // Create the S3 bucket to store error pages
         const errorPagesBucket = new Bucket(this, `ShortLinksErrorPagesBucket`, {
-            bucketName: config.get('nelsonshortlinksservicestack.errorpagesbucketname'),
+            bucketName: ShortLinksErrorBucketName,
             removalPolicy: config.get('defaultremovalpolicy'),
             publicReadAccess: true,
             //Block all public access: off

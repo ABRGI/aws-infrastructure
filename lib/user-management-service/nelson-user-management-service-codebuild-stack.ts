@@ -16,7 +16,6 @@ import { ChangeUserPasswordFunctionName, ConfirmForgotUserPasswordFunctionName, 
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 export class NelsonUserManagementServiceCodebuildStack extends cdk.Stack {
-    userManagementServiceApiGw: cdk.aws_apigateway.RestApi;
     constructor(scope: Construct, id: string, props: cdk.StackProps) {
         super(scope, id, props);
 

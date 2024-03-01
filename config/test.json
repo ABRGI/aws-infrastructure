@@ -92,7 +92,12 @@
     },
     "nelsonshortlinksservicestack": {
         "domain": "t.n3l.io",
-        "errorpagesbucketname": "testnelsonshortlinkserrorpages"
+        "errorpagesbucketname": "testnelsonshortlinkserrorpages",
+        "gitrepo": {
+            "owner": "ABRGI",
+            "repo": "nelson-short-links-service",
+            "branchorref": "develop"
+        }
     },
     "saasinfrastructurestack": {
         "codebuildenvvariables": {
