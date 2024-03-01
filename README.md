@@ -29,6 +29,7 @@ Project uses AWS CDK V2. For list of dependencies, refer the [AWS CDK V2 documen
 - Use stack=-all to deploy all stacks if the app has multiple stacks: `NODE_ENV=test appscript=user-management-service stack=--all npm run deploy -- --profile nelson`
 - If no stack is specified, all stacks for the app will run
 - run `cdk diff` or `cdk synth` or `cdk deploy` to run for default app specified in cdk.json
+- Wild cards can be used in the stack parameter. Example: `... stack=*ShortLinks* ...` where all stacks containing the name 'ShortLinks' will be included in the run
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
