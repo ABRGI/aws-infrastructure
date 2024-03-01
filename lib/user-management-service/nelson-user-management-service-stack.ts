@@ -338,9 +338,9 @@ export class NelsonUserManagementServiceStack extends cdk.Stack {
         const updateRoleIntegration = new apigw.LambdaIntegration(updateRoleFn)
         rolesResource.addMethod(HttpMethod.GET, updateRoleIntegration, methodOptions);
         rolesResource.addMethod(HttpMethod.POST, updateRoleIntegration, methodOptions);
-        userManagementParentResource.addResource('userresetpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(changeUserPasswordFn), methodOptions);
-        userManagementParentResource.addResource('forgotpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(forgotUserPasswordFn), methodOptions);
-        userManagementParentResource.addResource('confirmforgotpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(confirmForgotUserPasswordFn), methodOptions);
+        userManagementParentResource.addResource('changeuserpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(changeUserPasswordFn), methodOptions);
+        userManagementParentResource.addResource('forgotpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(forgotUserPasswordFn));
+        userManagementParentResource.addResource('confirmforgotpassword').addMethod(HttpMethod.POST, new apigw.LambdaIntegration(confirmForgotUserPasswordFn));
 
         const userManagementServiceDeployment = new apigw.Deployment(this, 'UserManagementServiceDeployment', {
             api: this.userManagementServiceApiGw,
