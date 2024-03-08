@@ -179,7 +179,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     cachePolicy: behaviorCachePolicy,
                     originRequestPolicy: originCachePolicy,
                 },
-                '/config/*-script': {
+                '/config/*-script.js': {
                     origin: tenantPropertiesOrigin,
                     compress: false,
                     allowedMethods: AllowedMethods.ALLOW_ALL,

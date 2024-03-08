@@ -93,6 +93,9 @@ export class MuiCloudFrontStack extends cdk.Stack {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
                         domainName: props.loadBalancerDnsName,
+                        originHeaders: {
+                            "X-tenant": config.get('tenantid')
+                        }
                     },
                     behaviors: [
                         {  
@@ -145,7 +148,30 @@ export class MuiCloudFrontStack extends cdk.Stack {
                     behaviors: [
                         {
                             //User management service behavior
-                            pathPattern: '/config.txt',
+                            pathPattern: '/config/*-script.js',
+                            compress: false,
+                            isDefaultBehavior: false,
+                            allowedMethods: CloudFrontAllowedMethods.ALL,
+                            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                            forwardedValues: {
+                                queryString: true,
+                            },
+                            cachedMethods: CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                            minTtl: Duration.seconds(0),
+                            maxTtl: Duration.seconds(0),
+                            defaultTtl: Duration.seconds(0)
+                        }]
+                },
+                {
+                    connectionTimeout: Duration.seconds(5),
+                    customOriginSource: {
+                        domainName: `${config.get('tenantproperties.bucketname')}.s3.eu-central-1.amazonaws.com`,
+                        originPath: config.get('tenantproperties.originpath')
+                    },
+                    behaviors: [
+                        {
+                            //User management service behavior
+                            pathPattern: '/config/custom-style.css',
                             compress: false,
                             isDefaultBehavior: false,
                             allowedMethods: CloudFrontAllowedMethods.ALL,
