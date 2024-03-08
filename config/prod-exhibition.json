@@ -118,5 +118,6 @@
         "bucketname": "kensingtonstay.com",
         "indexdocument": "index.html",
         "usewwwdomain": true
-    }
+    },
+    "tenantid": "938d7110-845a-40f3-b0db-b063c8b30f87"
 }

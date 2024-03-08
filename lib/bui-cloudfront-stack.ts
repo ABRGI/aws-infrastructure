@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, Distribution, OriginProtocolPolicy, OriginRequestPolicy, OriginRequestQueryStringBehavior, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CfnDistribution, CloudFrontAllowedCachedMethods, CloudFrontAllowedMethods, CloudFrontWebDistribution, Distribution, OriginProtocolPolicy, OriginRequestPolicy, OriginRequestQueryStringBehavior, ResponseHeadersPolicy, ViewerCertificate, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { ARecord, CfnRecordSet, CnameRecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
@@ -70,12 +70,16 @@ export class BuiCloudFrontStack extends cdk.Stack {
         });
         const saasAPI = new LoadBalancerV2Origin(props.loadBalancer, {
             originId: 'SaasAPI',
+            customHeaders: {
+                "X-tenant": config.get('tenantid')
+            }
         });
         //Step 1: Create cloudfront distribution
         var domainNames: string[] = [useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain')];
         if (useClientDomain && config.get('clientwebsite.usewwwdomain') == true) {
             domainNames.push(`www.${config.get('clientwebsite.domain')}`);
         }
+
         const buiCFDistribution = new Distribution(this, 'BuiCFDistribution', {
             comment: useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain'),
             defaultBehavior: {
@@ -83,7 +87,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                 cachePolicy: CachePolicy.CACHING_OPTIMIZED,
                 viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 origin: useClientDomain ? new S3Origin(props.clientWebsiteBucket!, {
-                    originId: 'ClientWebsite'
+                    originId: 'ClientWebsite',
                 }) : buiBucketSource,
             },
             additionalBehaviors: {
@@ -135,14 +139,6 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     cachePolicy: behaviorCachePolicy,
                     originRequestPolicy: originCachePolicy,
                 },
-                '/config.txt': {
-                    origin: tenantPropertiesOrigin,
-                    compress: false,
-                    allowedMethods: AllowedMethods.ALLOW_ALL,
-                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                    cachePolicy: behaviorCachePolicy,
-                    originRequestPolicy: originCachePolicy,
-                },
                 '/management*': {
                     origin: buiBucketSource,
                     compress: false,
@@ -183,6 +179,14 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     cachePolicy: behaviorCachePolicy,
                     originRequestPolicy: originCachePolicy,
                 },
+                '/config/*-script': {
+                    origin: tenantPropertiesOrigin,
+                    compress: false,
+                    allowedMethods: AllowedMethods.ALLOW_ALL,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    cachePolicy: behaviorCachePolicy,
+                    originRequestPolicy: originCachePolicy,
+                }
             },
             domainNames: domainNames,
             certificate: certificate
