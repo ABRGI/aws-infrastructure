@@ -39,7 +39,8 @@ export class BuiCloudFrontStack extends cdk.Stack {
         behaviorCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         var originCachePolicy = new OriginRequestPolicy(this, "OriginReqestCachePolicy", {
             queryStringBehavior: OriginRequestQueryStringBehavior.all(),
-            originRequestPolicyName: `${config.get('environmentname')}OriginRequestPolicy`
+            originRequestPolicyName: `${config.get('environmentname')}OriginRequestPolicy`,
+            headerBehavior: CacheHeaderBehavior.allowList('Host')
         });
         originCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         var pricingBehaviorCachePolicy = new CachePolicy(this, "PricingBehaviorManagementCachePolicy", {
@@ -51,12 +52,6 @@ export class BuiCloudFrontStack extends cdk.Stack {
             queryStringBehavior: OriginRequestQueryStringBehavior.all()
         });
         pricingBehaviorCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
-        var pricingOriginCachePolicy = new OriginRequestPolicy(this, "PricingOriginReqestCachePolicy", {
-            queryStringBehavior: OriginRequestQueryStringBehavior.all(),
-            originRequestPolicyName: `${config.get('environmentname')}PricingOriginRequestPolicy`,
-            headerBehavior: CacheHeaderBehavior.allowList('Host')
-        });
-        pricingOriginCachePolicy.applyRemovalPolicy(config.get('defaultremovalpolicy'));
         //Define the different origins
         const userManagementApiOrigin = new HttpOrigin(config.get('nelsonmanagementservice.userserviceapigatewayurl'), {
             originId: "UserManagement",
@@ -114,7 +109,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
                     cachePolicy: pricingBehaviorCachePolicy,
-                    originRequestPolicy: pricingOriginCachePolicy,
+                    originRequestPolicy: originCachePolicy,
                 },
                 '/api/m_app/prices/*/*': {
                     origin: saasAPI,
@@ -122,7 +117,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
                     cachePolicy: pricingBehaviorCachePolicy,
-                    originRequestPolicy: pricingOriginCachePolicy,
+                    originRequestPolicy: originCachePolicy,
                 },
                 '/api/*': {
                     origin: saasAPI,
@@ -132,7 +127,15 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     allowedMethods: AllowedMethods.ALLOW_ALL,
                     cachePolicy: CachePolicy.CACHING_DISABLED
                 },
-                '/*-config.json': {
+                '/*.json': {
+                    origin: tenantPropertiesOrigin,
+                    compress: false,
+                    allowedMethods: AllowedMethods.ALLOW_ALL,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    cachePolicy: behaviorCachePolicy,
+                    originRequestPolicy: originCachePolicy,
+                },
+                '/config.txt': {
                     origin: tenantPropertiesOrigin,
                     compress: false,
                     allowedMethods: AllowedMethods.ALLOW_ALL,
@@ -166,6 +169,14 @@ export class BuiCloudFrontStack extends cdk.Stack {
                 },
                 '/??/booking/*': {
                     origin: buiBucketSource,
+                    compress: false,
+                    allowedMethods: AllowedMethods.ALLOW_ALL,
+                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    cachePolicy: behaviorCachePolicy,
+                    originRequestPolicy: originCachePolicy,
+                },
+                '/config/custom-style.css': {
+                    origin: tenantPropertiesOrigin,
                     compress: false,
                     allowedMethods: AllowedMethods.ALLOW_ALL,
                     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,

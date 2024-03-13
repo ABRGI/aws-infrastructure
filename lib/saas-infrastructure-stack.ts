@@ -36,6 +36,7 @@ export class SaasInfrastructureStack extends cdk.Stack {
     albSG: ec2.ISecurityGroup; // public security group
     fargateClusterSG: ec2.ISecurityGroup; // private security group
     applicationLoadBalancer: ApplicationLoadBalancer;
+    applicationLoadBalancerSD: ApplicationLoadBalancer;
 
     constructor(scope: Construct, id: string, props?: VpcStackProps) {
         super(scope, id, props);
@@ -183,6 +184,11 @@ export class SaasInfrastructureStack extends cdk.Stack {
             new cdk.Tag('Name', `${config.get('environmentname')}-vpc-to-db`)
         );
 
+        if (config.get('useexistingalbsd') == true) {
+            this.applicationLoadBalancerSD = ApplicationLoadBalancer.fromLookup(this, "ALBSD", {
+                loadBalancerArn: config.get('albsdarn')
+            }) as ApplicationLoadBalancer;
+        }
         // Create ALB
         this.applicationLoadBalancer = new ApplicationLoadBalancer(this, 'ALB', {
             vpc: this.nelsonVpc,

@@ -2,11 +2,14 @@ import * as config from 'config';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { IAlias, IFunction, Function, Runtime, Architecture, Code, Alias } from 'aws-cdk-lib/aws-lambda';
+
+export const LinkManagerFunctionName = `${config.get('environmentname')}ShortLinksManager`;
+export const RedirectServiceFunctionName = `${config.get('environmentname')}ShortLinksRedirectService`;
 
 export class NelsonShortLinksStack extends cdk.Stack {
 
-    redirectSvcFunction: lambda.IFunction;
+    redirectSvcFunction: IFunction;
 
     constructor(scope: Construct, id: string, props: cdk.StackProps) {
         super(scope, id, props);
@@ -52,12 +55,12 @@ export class NelsonShortLinksStack extends cdk.Stack {
             new cdk.Tag('nelson:environment', config.get('tags.nelsonenvironment'))
         );
 
-        const linkManagerFn = new lambda.Function(this, 'ShortLinksManager', {
-            runtime: lambda.Runtime.NODEJS_18_X,
-            architecture: lambda.Architecture.ARM_64,
+        const linkManagerFn = new Function(this, 'ShortLinksManager', {
+            runtime: Runtime.NODEJS_18_X,
+            architecture: Architecture.ARM_64,
             handler: 'index.handler',
-            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
-            functionName: `${config.get('environmentname')}ShortLinksManager`,
+            code: Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: LinkManagerFunctionName,
             timeout: cdk.Duration.seconds(3),
             description: 'This function manages the CRUD actions for short links',
             environment: {
@@ -72,12 +75,12 @@ export class NelsonShortLinksStack extends cdk.Stack {
         linksTable.grantReadWriteData(linkManagerFn);
         tenantLinksTable.grantReadWriteData(linkManagerFn);
 
-        this.redirectSvcFunction = new lambda.Function(this, 'RedirectServiceFunction', {
-            runtime: lambda.Runtime.NODEJS_18_X,
-            architecture: lambda.Architecture.ARM_64,
+        this.redirectSvcFunction = new Function(this, 'RedirectServiceFunction', {
+            runtime: Runtime.NODEJS_18_X,
+            architecture: Architecture.ARM_64,
             handler: 'index.handler',
-            code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
-            functionName: `${config.get('environmentname')}ShortLinksRedirectService`,
+            code: Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
+            functionName: RedirectServiceFunctionName,
             timeout: cdk.Duration.seconds(3),
             description: 'This function helps redirect shortlink to expected destination and some validations',
             environment: {
@@ -89,6 +92,7 @@ export class NelsonShortLinksStack extends cdk.Stack {
         linksTable.grantReadWriteData(this.redirectSvcFunction);
 
         // Add this as output to the stack so another deployment tool can pick this up
+        // Example of use - SAAS needs this ARN to call the function
         new cdk.CfnOutput(this, 'ShortLinksManagerFunctionArn', {
             value: linkManagerFn.functionArn,
         });

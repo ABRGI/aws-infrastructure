@@ -22,7 +22,12 @@
     "nelsonusermanagementservicetack": {
         "usertable": "test-user-management-users",
         "accessrolestable": "test-user-management-access-roles",
-        "newuserpassword": "Welcome@Nelson123"
+        "newuserpassword": "Welcome@Nelson123",
+        "gitrepo": {
+            "owner": "ABRGI",
+            "repo": "nelson-user-management-service",
+            "branchorref": "develop"
+        }
     },
     "defaultremovalpolicy": "destroy",
     "useexistingvpc": false,
@@ -87,7 +92,12 @@
     },
     "nelsonshortlinksservicestack": {
         "domain": "t.n3l.io",
-        "errorpagesbucketname": "testnelsonshortlinkserrorpages"
+        "errorpagesbucketname": "testnelsonshortlinkserrorpages",
+        "gitrepo": {
+            "owner": "ABRGI",
+            "repo": "nelson-short-links-service",
+            "branchorref": "develop"
+        }
     },
     "saasinfrastructurestack": {
         "codebuildenvvariables": {

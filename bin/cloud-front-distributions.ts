@@ -15,7 +15,7 @@
 */
 import * as cdk from 'aws-cdk-lib';
 import { NelsonLoginProviderStack } from '../lib/nelson-login-provider-stack';
-import { NelsonUserManagementServiceStack } from '../lib/nelson-user-management-service-stack';
+import { NelsonUserManagementServiceStack } from '../lib/user-management-service/nelson-user-management-service-stack';
 import * as config from 'config';
 import { NelsonManagementHostedZoneStack } from '../lib/nelson-management-hosted-zone-stack';
 import { NelsonManagementCloudFrontStack } from '../lib/nelson-management-cloudfront-stack';
@@ -24,6 +24,8 @@ import { NelsonTenantManagementServiceStack } from '../lib/nelson-tenant-managem
 import { NelsonShortLinksStack } from '../lib/short-links/short-links-stack';
 import { ShortLinksHostedZoneStack } from '../lib/short-links/short-links-hosted-zone-stack';
 import { NelsonShortLinksCloudFrontStack } from '../lib/short-links/short-links-cloudfront-distributions';
+import { NelsonUserManagementServiceCodebuildStack } from '../lib/user-management-service/nelson-user-management-service-codebuild-stack';
+import { NelsonShortLinksCodebuildStack } from '../lib/short-links/short-links-codebuild-stack';
 
 const app = new cdk.App();
 const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('environmentname')}HostedZoneStack`, {
@@ -49,6 +51,12 @@ const userManagementServiceStack = new NelsonUserManagementServiceStack(app, `${
     clientId: loginProviderStack.userPoolClient.userPoolClientId,
     clientSecret: loginProviderStack.userPoolClientSecret,
     userPool: loginProviderStack.nelsonUserPool
+});
+const userManagementServiceCodeBuildStack = new NelsonUserManagementServiceCodebuildStack(app, `${config.get('environmentname')}UserManagementServiceCodeBuild`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    },
 });
 const muiInfrastructureStack = new MuiInfrastructureStack(app, `${config.get('environmentname')}MuiInfrastructure`, {
     env: {
@@ -85,6 +93,12 @@ const shortlinksCFDistribution = new NelsonShortLinksCloudFrontStack(app, `${con
         region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
     },
     crossRegionReferences: true
+});
+const shortLinksCodeBuildStack = new NelsonShortLinksCodebuildStack(app, `${config.get('environmentname')}ShortLinksCodeBuild`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    },
 });
 new NelsonManagementCloudFrontStack(app, `${config.get('environmentname')}NelsonManagementCloudFrontDistribution`, {
     env: {
