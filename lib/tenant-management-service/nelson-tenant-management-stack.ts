@@ -17,6 +17,9 @@ import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
 import { UserPool } from 'aws-cdk-lib/aws-cognito';
 import { HttpMethod } from 'aws-cdk-lib/aws-lambda';
 
+export const listTenantFunctionName = `${config.get('environmentname')}ListTenantsFunction`;
+export const manageTenantPropertiesFunctionName = `${config.get('environmentname')}ManageTenantProperties`;
+
 export interface TenantManagementProps extends cdk.StackProps {
     userPool: UserPool,
     userPoolName: string
@@ -56,7 +59,7 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
-            functionName: `${config.get('environmentname')}ListTenantsFunction`,
+            functionName: listTenantFunctionName,
             timeout: cdk.Duration.seconds(3),
             description: 'This function lists the tenants for nelson based on search criteria',
             environment: {
@@ -72,7 +75,7 @@ export class NelsonTenantManagementServiceStack extends cdk.Stack {
             architecture: lambda.Architecture.ARM_64,
             handler: 'index.handler',
             code: lambda.Code.fromInline('exports.handler = async (event) => { console.log(event); return { statusCode: 200 } }'),    //Basic code
-            functionName: `${config.get('environmentname')}ManageTenantProperties`,
+            functionName: manageTenantPropertiesFunctionName,
             timeout: cdk.Duration.seconds(3),
             description: 'This function gets or updates the tenant properties based on HTTP method. Required params tenant name, tenant environment',
             environment: {

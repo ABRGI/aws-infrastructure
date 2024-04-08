@@ -20,12 +20,13 @@ import * as config from 'config';
 import { NelsonManagementHostedZoneStack } from '../lib/nelson-management-hosted-zone-stack';
 import { NelsonManagementCloudFrontStack } from '../lib/nelson-management-cloudfront-stack';
 import { MuiInfrastructureStack } from '../lib/mui-infrastructure-stack';
-import { NelsonTenantManagementServiceStack } from '../lib/nelson-tenant-management-stack';
+import { NelsonTenantManagementServiceStack } from '../lib/tenant-management-service/nelson-tenant-management-stack';
 import { NelsonShortLinksStack } from '../lib/short-links/short-links-stack';
 import { ShortLinksHostedZoneStack } from '../lib/short-links/short-links-hosted-zone-stack';
 import { NelsonShortLinksCloudFrontStack } from '../lib/short-links/short-links-cloudfront-distributions';
 import { NelsonUserManagementServiceCodebuildStack } from '../lib/user-management-service/nelson-user-management-service-codebuild-stack';
 import { NelsonShortLinksCodebuildStack } from '../lib/short-links/short-links-codebuild-stack';
+import { NelsonTenantManagementServiceCodebuildStack } from '../lib/tenant-management-service/nelson-tenant-management-service-codebuild-stack';
 
 const app = new cdk.App();
 const hostedZoneStack = new NelsonManagementHostedZoneStack(app, `${config.get('environmentname')}HostedZoneStack`, {
@@ -71,6 +72,12 @@ const tenantManagementServiceStack = new NelsonTenantManagementServiceStack(app,
     },
     userPool: loginProviderStack.nelsonUserPool,
     userPoolName: config.get('nelsonloginproviderstack.nelsonuserpool')
+});
+const tenantManagementServiceCodeBuildStack = new NelsonTenantManagementServiceCodebuildStack(app, `${config.get('environmentname')}TenantManagementServiceCodeBuild`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    }
 });
 const shortLinksHostedZoneStack = new ShortLinksHostedZoneStack(app, `${config.get('environmentname')}ShortLinksHostedZone`, {
     env: {
