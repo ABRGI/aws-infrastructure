@@ -78,7 +78,12 @@
         "createbucket": true,
         "tenanttable": "nelson-tenants",
         "bucketname": "nelson-tenant-properties",
-        "publicreadaccess": true
+        "publicreadaccess": true,
+        "gitrepo": {
+            "owner": "ABRGI",
+            "repo": "nelson-tenant-management-service",
+            "branchorref": "master"
+        }
     },
     "rdssnapshotexportpipelinestack": {
         "bucket": {
@@ -182,5 +187,6 @@
         "indexdocument": "index.html",
         "certificatearn": "",
         "usewwwdomain": false
-    }
+    },
+    "tenantid": ""
 }
