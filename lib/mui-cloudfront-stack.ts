@@ -92,10 +92,7 @@ export class MuiCloudFrontStack extends cdk.Stack {
                 {
                     connectionTimeout: Duration.seconds(5),
                     customOriginSource: {
-                        domainName: props.loadBalancerDnsName,
-                        originHeaders: {
-                            "X-tenant": config.get('tenantid')
-                        }
+                        domainName: props.loadBalancerDnsName
                     },
                     behaviors: [
                         {  

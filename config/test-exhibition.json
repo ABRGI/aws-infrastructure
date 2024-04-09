@@ -36,7 +36,7 @@
     },
     "useexistingalbsg": false,
     "albsgId": "",
-    "useexistingalbsd": true,
+    "useexistingalbsd": false,
     "albsdarn": "arn:aws:elasticloadbalancing:eu-central-1:459045743560:loadbalancer/app/test-nelson/aa08b34f55096b17",
     "useexistingfargateclustersg": false,
     "fargateclustersgid": "",
@@ -146,6 +146,4 @@
         "indexdocument": "index.html",
         "certificatearn": "arn:aws:acm:us-east-1:459045743560:certificate/11c82711-2ce9-4be6-a0ba-3935455e0b13"
     }
-    ,
-    "tenantid": "938d7110-845a-40f3-b0db-b063c8b30f87"
 }

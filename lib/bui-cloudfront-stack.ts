@@ -69,10 +69,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
             originId: "BUIBucket"
         });
         const saasAPI = new LoadBalancerV2Origin(props.loadBalancer, {
-            originId: 'SaasAPI',
-            customHeaders: {
-                "X-tenant": config.get('tenantid')
-            }
+            originId: 'SaasAPI'
         });
         //Step 1: Create cloudfront distribution
         var domainNames: string[] = [useClientDomain ? config.get('clientwebsite.domain') : config.get('buihostedzonestack.domain')];

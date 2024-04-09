@@ -188,6 +188,5 @@
         "indexdocument": "index.html",
         "certificatearn": "",
         "usewwwdomain": false
-    },
-    "tenantid": ""
+    }
 }
