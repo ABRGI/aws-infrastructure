@@ -117,12 +117,10 @@ const muiCloudFrontStack = new MuiCloudFrontStack(app, `${config.get('environmen
     crossRegionReferences: true
 });
 
-if (config.get('npriceinfrastructurestack.issupportednprice')) {
-    const npriceApiStack = new NpriceInfrastructureStack(app, `${config.get('environmentname')}NpriceInfrastructure`, {
-        env: {
-            account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
-            region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
-        },
-        vpc: nelsonVpc as IVpc
-    });
-}
+const npriceApiStack = new NpriceInfrastructureStack(app, `${config.get('environmentname')}NpriceInfrastructure`, {
+    env: {
+        account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION
+    },
+    vpc: nelsonVpc as IVpc
+});
