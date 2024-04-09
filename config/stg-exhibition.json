@@ -128,7 +128,8 @@
         "pathpattern": "/*-config.json"
     },
     "npriceinfrastructurestack": {
-        "issupportednprice": "true",
+        "issupportednprice": true,
+        "isactivatednpricecore": true,
         "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
         "region": "eu-central-1",
         "corebootcron": {
