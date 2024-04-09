@@ -114,22 +114,23 @@ export class NpriceInfrastructureStack extends cdk.Stack {
         const multipartUserData = new ec2.MultipartUserData();
         multipartUserData.addPart(ec2.MultipartBody.fromUserData(setupCommands));
 
+        const npriceApiInstance = new Instance(this, `${config.get('environmentname')}NpriceApiInstance`, {
+            instanceType: InstanceType.of(
+                InstanceClass.T2,
+                InstanceSize.MICRO,
+            ),
+            machineImage: ec2.MachineImage.latestAmazonLinux({
+                generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
+            }),
+            vpc: props.vpc as Vpc,
+            securityGroup: npriceApiSG,
+            instanceName: `${config.get('environmentname')}-nprice-api`,
+            role: npriceRole,
+            userData: multipartUserData
+        });
+        npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
+
         if (config.get('npriceinfrastructurestack.isactivatednpricecore')) {
-            const npriceApiInstance = new Instance(this, `${config.get('environmentname')}NpriceApiInstance`, {
-                instanceType: InstanceType.of(
-                    InstanceClass.T2,
-                    InstanceSize.MICRO,
-                ),
-                machineImage: ec2.MachineImage.latestAmazonLinux({
-                    generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
-                }),
-                vpc: props.vpc as Vpc,
-                securityGroup: npriceApiSG,
-                instanceName: `${config.get('environmentname')}-nprice-api`,
-                role: npriceRole,
-                userData: multipartUserData
-            });
-            npriceApiInstance.applyRemovalPolicy(config.get('defaultremovalpolicy'));
     
             // Configurations for nprice core
             const npriceCoreSG = new ec2.SecurityGroup(this, `${config.get('environmentname')}NpriceCoreSecurityGroup`, {
