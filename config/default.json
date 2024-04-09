@@ -108,7 +108,7 @@
         "hostedzone": "n3l.io",
         "domaincertificatearn": "",
         "errorpagesbucketname": "nelsonshortlinkserrorpages",
-        "createnewsubdomaincertificate": "true",
+        "createnewsubdomaincertificate": true,
         "certificatearn": "",
         "gitrepo": {
             "owner": "ABRGI",
@@ -165,9 +165,10 @@
         "tenantserviceoriginpath": "/Prod"
     },
     "npriceinfrastructurestack": {
-        "issupportednprice": "true",
+        "issupportednprice": true,
         "snsarn": "arn:aws:sns:eu-central-1:459045743560:nprice_core_instance_running",
         "region": "eu-central-1",
+        "isactivatednpricecore": true,
         "integrationapiport": 3000,
         "corebootcron": {
             "minute": "57",
