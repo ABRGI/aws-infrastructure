@@ -174,15 +174,7 @@ export class BuiCloudFrontStack extends cdk.Stack {
                     viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     cachePolicy: behaviorCachePolicy,
                     originRequestPolicy: originCachePolicy,
-                },
-                '/config/custom-style.css': {
-                    origin: tenantPropertiesOrigin,
-                    compress: false,
-                    allowedMethods: AllowedMethods.ALLOW_ALL,
-                    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                    cachePolicy: behaviorCachePolicy,
-                    originRequestPolicy: originCachePolicy,
-                },
+                }
             },
             domainNames: domainNames,
             certificate: certificate
